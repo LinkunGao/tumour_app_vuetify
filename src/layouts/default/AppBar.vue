@@ -8,7 +8,7 @@
   <v-app-bar color="surface" class="d-flex justify-end">
     <v-app-bar-nav-icon @click="drawer = !drawer"></v-app-bar-nav-icon>
 
-    <v-app-bar-title class="text-warning">
+    <v-app-bar-title class="text-deep-orange">
       <span>Tumour Segmentation APP </span>
       <span class="text-body-2">v2.3.6</span>
     </v-app-bar-title>
