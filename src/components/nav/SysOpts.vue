@@ -9,12 +9,12 @@
       ></v-list-item>
     </template>
 
-    <IntroCtl />
+    <SysOptsCtl />
   </v-list-group>
 </template>
 
 <script setup lang="ts">
-import IntroCtl from "@/components/intro/IntroCtl.vue";
+import SysOptsCtl from "@/components/nav/tools/sysOptsCtl.vue";
 import { ref } from "vue";
 </script>
 
