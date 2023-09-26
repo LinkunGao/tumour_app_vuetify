@@ -1,5 +1,5 @@
 <template>
-  <v-menu transition="scroll-x-reverse-transition">
+  <v-menu transition="scroll-x-reverse-transition" >
     <template v-slot:activator="{ props }">
       <v-btn
         color="info"
@@ -14,7 +14,7 @@
       border="md"
       class="pa-6 text-white mx-auto"
       color="#141518"
-      max-width="400"
+      max-width="500"
     >
       <h4 class="text-h5 font-weight-bold mb-4">How to use:</h4>
 
@@ -38,8 +38,8 @@
 
         <a href="#" class="text-red-accent-2 text-decoration-none">Undo: </a>
          <p class="ml-9">&#9734; In GUI click undo; or </p>
-         <p class="ml-9">&#9734; On keyborad using ctrl <a href="#" class="text-teal text-decoration-none">+</a> z (windows) /
-        command <a href="#" class="text-teal text-decoration-none">+</a> z (mac).</p>
+         <p class="ml-9">&#9734; On keyborad using ctrl <a href="#" class="text-teal text-decoration-none">+</a> z (Windows) /
+        command <a href="#" class="text-teal text-decoration-none">+</a> z (Mac).</p>
 
         <a href="#" class="text-red-accent-2 text-decoration-none"
           >Cursor Inspector:
