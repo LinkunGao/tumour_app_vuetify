@@ -10,11 +10,12 @@
       >
       </v-btn>
     </template>
+    <!-- color="#141518" -->
     <v-sheet
       border="md"
       class="pa-6 text-white mx-auto"
-      color="#141518"
-      max-width="500"
+      color="surface"
+      max-width="550"
     >
       <h4 class="text-h5 font-weight-bold mb-4">How to use:</h4>
 
