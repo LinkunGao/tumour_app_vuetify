@@ -35,8 +35,8 @@ const lightTheme: ThemeDefinition = {
 const darkTheme: ThemeDefinition = {
   dark: true,
   colors: {
-    background: "rgb(40, 44, 52)",
-    surface: "rgb(33, 37, 43)",
+    background: "#282c34",
+    surface: "#21252b",
     primary: "#fff8ec",
     "primary-font": "#fff8ec",
     secondary: "#03dac6",

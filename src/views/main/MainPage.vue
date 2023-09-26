@@ -66,8 +66,6 @@ function moveSplitLine(e: MouseEvent) {
     if (percent < 1 || percent > 99) {
       return;
     }
-
-    // (splitBar.value as HTMLDivElement).style.left = percent + "%";
     (splitContainer.value as HTMLDivElement).style.gridTemplateColumns =
       percent - 1 + "% 1%" + (100 - percent) + "%";
     emitter.emit("resize", true);
