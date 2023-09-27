@@ -1,5 +1,9 @@
 // Composables
-import { createRouter, createWebHistory } from "vue-router";
+import {
+  createRouter,
+  createWebHistory,
+  createWebHashHistory,
+} from "vue-router";
 
 const routes = [
   {
@@ -19,9 +23,16 @@ const routes = [
   },
 ];
 
+// const router = createRouter({
+//   history: createWebHistory(process.env.BASE_URL),
+//   routes,
+// });
+
+// export default router;
+
 const router = createRouter({
-  history: createWebHistory(process.env.BASE_URL),
+  history: createWebHashHistory(),
+  linkActiveClass: "active",
   routes,
 });
-
 export default router;

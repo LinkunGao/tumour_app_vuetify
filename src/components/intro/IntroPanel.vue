@@ -10,7 +10,6 @@
       >
       </v-btn>
     </template>
-    <!-- color="#141518" -->
     <v-sheet
       border="md"
       class="pa-6 text-white mx-auto"

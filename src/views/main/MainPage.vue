@@ -1,36 +1,39 @@
 <template>
-  <div class="split-container" ref="splitContainer">
+  <div class="main-container" ref="mainContainer">
     <div
       v-show="!rightFullScreen"
       class="box bg-surface ml-1 my-1 rounded"
       ref="left_container"
       @dblclick.stop="togglePanelActive('left', $event)"
     >
-      <MainArea />
+      <LeftPanel />
     </div>
-    <div class="d-flex justify-center align-center">
+    <div class="d-flex justify-center align-center" ref="splitBar">
       <div
         v-show="!leftFullScreen && !rightFullScreen"
         class="split-bar bg-split-line rounded-lg"
-        ref="splitBar"
       ></div>
     </div>
 
     <div
-      v-if="!leftFullScreen"
+      v-show="!leftFullScreen"
       class="box bg-surface mr-1 my-1 rounded"
       ref="right_container"
       @dblclick.stop="togglePanelActive('right', $event)"
-    ></div>
+    >
+      <RightPanel />
+    </div>
   </div>
 </template>
 
 <script lang="ts" setup>
 import MainArea from "@/views/main/components/MainArea.vue";
+import LeftPanel from "./components/left-panel-core/left.vue";
+import RightPanel from "./components/right-panel-core/right.vue";
 import { ref, onMounted } from "vue";
 import emitter from "@/plugins/bus";
 
-const splitContainer = ref<HTMLDivElement>();
+const mainContainer = ref<HTMLDivElement>();
 const splitBar = ref<HTMLDivElement>();
 
 const left_container = ref<HTMLDivElement>();
@@ -41,6 +44,8 @@ const ignoreElements = ["INPUT", "I", "svg", "path"];
 
 let isDragging = false;
 onMounted(() => {
+  emitter.emit("containerHight", mainContainer.value?.offsetHeight);
+
   splitBar.value?.addEventListener("mousedown", function (e) {
     isDragging = true;
     document.addEventListener("mousemove", moveSplitLine);
@@ -55,7 +60,7 @@ onMounted(() => {
 function moveSplitLine(e: MouseEvent) {
   if (isDragging) {
     const containerRect = (
-      splitContainer.value as HTMLDivElement
+      mainContainer.value as HTMLDivElement
     ).getBoundingClientRect();
     const mousePosition = e.clientX - containerRect.left;
 
@@ -63,10 +68,10 @@ function moveSplitLine(e: MouseEvent) {
     const maxLeft =
       containerRect.right - (splitBar.value as HTMLDivElement).offsetWidth;
     const percent = ((mousePosition - minLeft) / (maxLeft - minLeft)) * 100;
-    if (percent < 1 || percent > 99) {
-      return;
-    }
-    (splitContainer.value as HTMLDivElement).style.gridTemplateColumns =
+    // if (percent < 0 || percent > 100) {
+    //   return;
+    // }
+    (mainContainer.value as HTMLDivElement).style.gridTemplateColumns =
       percent - 1 + "% 1%" + (100 - percent) + "%";
     emitter.emit("resize", true);
   }
@@ -92,7 +97,7 @@ function togglePanelActive(panel: string, e: MouseEvent) {
 </script>
 
 <style scoped>
-.split-container {
+.main-container {
   display: grid;
   grid-template-columns: 64% 1% 35%;
   width: 100%;
