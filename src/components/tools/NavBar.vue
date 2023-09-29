@@ -1,6 +1,6 @@
 <template>
   <div class="nav">
-    <div class="content" id="left_nav_bar" >
+    <div class="content" id="left_nav_bar">
       <el-slider
         v-model="sliceNum"
         :max="p.max"
@@ -96,7 +96,6 @@ const openDialog = () => {
   emit("onOpenDialog", true);
 };
 
-
 const onSwitchSliceOrientation = (axis: string) => {
   isAxis = true;
   emit("onChangeOrientation", axis);
@@ -167,6 +166,7 @@ watchEffect(() => {
   /* position: fixed;
   bottom: 25px;
   left: 10px; */
+
   height: 60px;
   width: 90%;
   display: flex;

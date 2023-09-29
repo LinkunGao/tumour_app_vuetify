@@ -109,8 +109,8 @@ const { nipplePoints } = storeToRefs(useNipplePointsStore());
 const { getNipplePoints } = useNipplePointsStore();
 
 onMounted(() => {
-  emitter.on("containerHight", (hight) => {
-    (bg.value as HTMLDivElement).style.height = `${(hight as number) - 80}px`;
+  emitter.on("containerHight", (h) => {
+    (bg.value as HTMLDivElement).style.height = `${h}vh`;
   });
   let { $refs } = (getCurrentInstance() as any).proxy;
   refs = $refs;
@@ -320,8 +320,10 @@ function initScene(name: string) {
     };
     controls.rotateSpeed = 3.0;
 
-    copperScene.loadViewUrl("/Tumour_App_Vuetify/nrrd_view.json");
+    copperScene.loadViewUrl("/nrrd_view.json");
     emitter.on("resize", () => {
+      console.log();
+
       setTimeout(() => {
         copperScene?.onWindowResize();
       }, 100);
@@ -538,7 +540,7 @@ const resetSliceIndex = (sliceIndex: ISliceIndex) => {
 
 const resetNrrdImage = () => {
   panelOperator.dispose();
-  copperScene.loadViewUrl("/Tumour_App_Vuetify/nrrd_view.json");
+  copperScene.loadViewUrl("/nrrd_view.json");
   loadNrrdMeshes.x.visible = true;
   loadNrrdMeshes.y.visible = true;
   loadNrrdMeshes.z.visible = true;
@@ -604,7 +606,7 @@ const handleViewsDoubleClick = (view: string) => {
       loadNrrdMeshes.y.visible = false;
       loadNrrdMeshes.z.visible = false;
       panelOperator.setSlicePrams(loadNrrdSlices.x);
-      copperScene.loadViewUrl("/Tumour_App_Vuetify/nrrd_view_sagittal.json");
+      copperScene.loadViewUrl("/nrrd_view_sagittal.json");
       break;
 
     case "axial":
@@ -612,7 +614,7 @@ const handleViewsDoubleClick = (view: string) => {
       loadNrrdMeshes.y.visible = false;
       loadNrrdMeshes.z.visible = true;
       panelOperator.setSlicePrams(loadNrrdSlices.z);
-      copperScene.loadViewUrl("/Tumour_App_Vuetify/nrrd_view.json");
+      copperScene.loadViewUrl("/nrrd_view.json");
       break;
 
     case "coronal":
@@ -620,7 +622,7 @@ const handleViewsDoubleClick = (view: string) => {
       loadNrrdMeshes.y.visible = true;
       loadNrrdMeshes.z.visible = false;
       panelOperator.setSlicePrams(loadNrrdSlices.y);
-      copperScene.loadViewUrl("/Tumour_App_Vuetify/nrrd_view_coronal.json");
+      copperScene.loadViewUrl("/nrrd_view_coronal.json");
       break;
   }
 };
