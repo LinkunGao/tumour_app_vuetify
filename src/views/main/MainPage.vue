@@ -2,7 +2,7 @@
   <div class="main-container" ref="mainContainer">
     <div
       v-show="!rightFullScreen"
-      class="box bg-surface ml-1 my-1 rounded"
+      class="box bg-surface ml-1 my-1 mt-2 rounded"
       ref="left_container"
       @dblclick.stop="togglePanelActive('left', $event)"
     >
@@ -17,7 +17,7 @@
 
     <div
       v-show="!leftFullScreen"
-      class="box bg-surface mr-1 my-1 rounded"
+      class="box bg-surface mr-1 my-1 mt-2 rounded"
       ref="right_container"
       @dblclick.stop="togglePanelActive('right', $event)"
     >
@@ -44,8 +44,13 @@ const ignoreElements = ["INPUT", "I", "svg", "path"];
 
 let isDragging = false;
 onMounted(() => {
-  emitter.emit("containerHight", mainContainer.value?.offsetHeight);
+  const initHeight = mainContainer.value?.clientHeight as number;
+  const h = ((initHeight - 80 - 100) / initHeight) * 100;
 
+  emitter.emit("containerHight", h);
+  (mainContainer.value as HTMLDivElement).style.height = `${
+    ((initHeight - 80) / initHeight) * 100
+  }vh`;
   splitBar.value?.addEventListener("mousedown", function (e) {
     isDragging = true;
     document.addEventListener("mousemove", moveSplitLine);
@@ -84,7 +89,7 @@ function togglePanelActive(panel: string, e: MouseEvent) {
     case "left":
       leftFullScreen.value = !leftFullScreen.value;
       left_container.value?.classList.toggle("panel_active");
-      emitter.emit("leftFullScreen", leftFullScreen.value);
+      // emitter.emit("leftFullScreen", leftFullScreen.value);
 
       break;
     case "right":
@@ -101,7 +106,7 @@ function togglePanelActive(panel: string, e: MouseEvent) {
   display: grid;
   grid-template-columns: 64% 1% 35%;
   width: 100%;
-  height: 100%;
+  /* height: 90vh; */
   overflow: hidden;
   position: relative;
   user-select: none;

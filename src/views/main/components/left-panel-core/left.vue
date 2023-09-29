@@ -1,27 +1,29 @@
 <template>
-  <div id="bg" ref="base_container">
-    <div ref="c_gui" id="gui"></div>
-    <div ref="nrrd_c" class="nrrd_c"></div>
+  <div style="height: 100vh">
+    <div id="bg" ref="base_container">
+      <div ref="c_gui" id="gui"></div>
+      <div ref="nrrd_c" class="nrrd_c"></div>
 
-    <Upload
-      :dialog="dialog"
-      @on-close-dialog="onCloseDialog"
-      @get-load-files-urls="readyToLoad"
-    ></Upload>
-  </div>
-  <div class="navBar" ref="navBar">
-    <NavBar
-      :file-num="fileNum"
-      :max="max"
-      :immediate-slice-num="immediateSliceNum"
-      :contrast-index="contrastNum"
-      :init-slice-index="initSliceIndex"
-      @on-slice-change="getSliceChangedNum"
-      @reset-main-area-size="resetMainAreaSize"
-      @on-change-orientation="resetSlicesOrientation"
-      @on-save="onSaveMask"
-      @on-open-dialog="onOpenDialog"
-    ></NavBar>
+      <Upload
+        :dialog="dialog"
+        @on-close-dialog="onCloseDialog"
+        @get-load-files-urls="readyToLoad"
+      ></Upload>
+    </div>
+    <div class="navBar" ref="navBar">
+      <NavBar
+        :file-num="fileNum"
+        :max="max"
+        :immediate-slice-num="immediateSliceNum"
+        :contrast-index="contrastNum"
+        :init-slice-index="initSliceIndex"
+        @on-slice-change="getSliceChangedNum"
+        @reset-main-area-size="resetMainAreaSize"
+        @on-change-orientation="resetSlicesOrientation"
+        @on-save="onSaveMask"
+        @on-open-dialog="onOpenDialog"
+      ></NavBar>
+    </div>
   </div>
 </template>
 <script setup lang="ts">
@@ -83,7 +85,7 @@ let pre_slices = ref();
 
 let gui = new GUI({ width: 300, autoPlace: false });
 let optsGui: GUI | undefined = undefined;
-let nrrdTools: Copper.nrrd_tools;
+let nrrdTools: Copper.NrrdTools;
 let loadBarMain: Copper.loadingBarType;
 let loadingContainer: HTMLDivElement, progress: HTMLDivElement;
 let allSlices: Array<any> = [];
@@ -145,10 +147,11 @@ const worker = new Worker(
 const eraserUrls = getEraserUrlsForOffLine();
 
 onMounted(async () => {
-  emitter.on("containerHight", (hight) => {
-    (base_container.value as HTMLDivElement).style.height = `${
-      (hight as number) - 80 - 100
-    }px`;
+  emitter.on("containerHight", (h) => {
+    console.log(h);
+
+    (base_container.value as HTMLDivElement).style.height = `${h}vh`;
+    // (navBar.value as HTMLDivElement).style.height = `${60}px`;
   });
   await getInitData();
   c_gui.value?.appendChild(gui.domElement);
@@ -161,7 +164,7 @@ onMounted(async () => {
     }
   );
 
-  nrrdTools = new Copper.nrrd_tools(nrrd_c.value as HTMLDivElement);
+  nrrdTools = new Copper.NrrdTools(nrrd_c.value as HTMLDivElement);
   // for offline working
 
   nrrdTools.setEraserUrls(eraserUrls);
@@ -259,13 +262,14 @@ worker.onmessage = async function (ev: MessageEvent) {
 
 const sendInitMaskToBackend = () => {
   // const masksData = nrrdTools.paintImages.z;
+  const rawMaskData = nrrdTools.getMaskData();
   const masksData = {
-    label1: nrrdTools.paintImagesLabel1.z,
-    label2: nrrdTools.paintImagesLabel2.z,
-    label3: nrrdTools.paintImagesLabel3.z,
+    label1: rawMaskData.paintImagesLabel1.z,
+    label2: rawMaskData.paintImagesLabel2.z,
+    label3: rawMaskData.paintImagesLabel3.z,
   };
   const dimensions = nrrdTools.getCurrentImageDimension();
-  const len = nrrdTools.paintImages.z.length;
+  const len = rawMaskData.paintImages.z.length;
   const width = dimensions[0];
   const height = dimensions[1];
   const voxelSpacing = nrrdTools.getVoxelSpacing();
@@ -428,7 +432,7 @@ watchEffect(() => {
         }
       }
 
-      nrrdTools.removeGuiFolderChilden(selectedContrastFolder);
+      Copper.removeGuiFolderChilden(selectedContrastFolder);
       for (let i = 0; i < allSlices.length; i++) {
         let name = "";
         i === 0 ? (name = "pre") : (name = "contrast" + i);

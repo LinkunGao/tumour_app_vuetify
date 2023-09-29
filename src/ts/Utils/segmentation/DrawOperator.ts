@@ -1,0 +1,3 @@
+class DrawOperator {
+  constructor() {}
+}

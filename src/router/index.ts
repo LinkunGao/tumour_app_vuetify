@@ -36,3 +36,12 @@ const router = createRouter({
   routes,
 });
 export default router;
+
+// console.log(process.env.BASE_URL);
+
+// const router = createRouter({
+//   history: createWebHistory(),
+//   routes,
+// });
+
+// export default router;
