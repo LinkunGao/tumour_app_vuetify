@@ -179,16 +179,6 @@ interface vtkModels {
   urls: Array<string>;
   opts?: IOptVTKLoader;
 }
-interface undoLayerType {
-  label1: Array<HTMLImageElement>;
-  label2: Array<HTMLImageElement>;
-  label3: Array<HTMLImageElement>;
-}
-
-interface undoType {
-  sliceIndex: number;
-  layers: undoLayerType;
-}
 
 interface copperVolumeType {
   tags: any;
@@ -260,7 +250,6 @@ export type {
   positionType,
   optionsGltfExporterType,
   vtkModels,
-  undoType,
   copperVolumeType,
   dicomLoaderOptsType,
   exportPaintImagesType,

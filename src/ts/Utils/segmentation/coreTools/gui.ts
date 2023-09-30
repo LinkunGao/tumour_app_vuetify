@@ -207,7 +207,7 @@ function setupGui(configs: IConfigGUI) {
   maskFolder
     .add(configs.gui_states, "downloadCurrentMask")
     .name("DownloadCurrentMask");
-  maskFolder.add(configs.gui_states, "exportMarks").name("ExportMask");
+  // maskFolder.add(configs.gui_states, "exportMarks").name("ExportMask");
 
   const contrastFolder = advanceFolder.addFolder("ContrastAdvanceSettings");
   contrastFolder
