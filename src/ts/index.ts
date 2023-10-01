@@ -36,10 +36,11 @@ import {
   SensorReadResult_kiwrious,
   HeartRateResult_kiwrious,
   loadingBarType,
-  paintImageType,
   exportPaintImageType,
   IOptVTKLoader,
 } from "./types/types";
+
+import { IPaintImage } from "./Utils/segmentation/coreTools/coreType";
 
 import "./css/style.css";
 
@@ -86,7 +87,7 @@ export type {
   SensorReadResult_kiwrious,
   HeartRateResult_kiwrious,
   loadingBarType,
-  paintImageType,
+  IPaintImage,
   exportPaintImageType,
   IOptVTKLoader,
 };

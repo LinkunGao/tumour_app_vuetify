@@ -236,6 +236,7 @@ interface ICursorPage {
 }
 
 export {
+  ICommXYZ,
   ICommXY,
   IDownloadImageConfig,
   IConvertObjType,

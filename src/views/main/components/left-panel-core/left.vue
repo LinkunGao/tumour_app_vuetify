@@ -407,8 +407,9 @@ watchEffect(() => {
           showNumber: true,
           getSliceNum,
         });
-        nrrdTools.draw(gui, { getMaskData });
-        scene?.addPreRenderCallbackFunction(nrrdTools.start());
+        nrrdTools.draw({ getMaskData });
+        nrrdTools.setupGUI(gui);
+        scene?.addPreRenderCallbackFunction(nrrdTools.start);
         setUpGuiAfterLoading();
       } else {
         nrrdTools.redrawMianPreOnDisplayCanvas();

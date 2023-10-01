@@ -1,28 +1,58 @@
+import DragOperator from "./DragOperator";
 import {
   IConvertObjType,
   IDrawingEvents,
+  IProtected,
+  IGUIStates,
+  INrrdStates,
   IDrawOpts,
   IPaintImage,
   IPaintImages,
   ICommXY,
   IUndoType,
+  ICursorPage,
 } from "./coreTools/coreType";
-import CommToolsData from "./CommToolsData";
+
 import { switchEraserSize, switchPencilIcon } from "../utils";
 
-export default class DrawOperator extends CommToolsData {
+export default class DrawOperator {
   container: HTMLElement;
-  mainAreaContainer: HTMLDivElement = document.createElement("div");
-  drawingPrameters: IDrawingEvents = {
-    handleOnDrawingMouseDown: (ev: MouseEvent) => {},
-    handleOnDrawingMouseMove: (ev: MouseEvent) => {},
-    handleOnPanMouseMove: (ev: MouseEvent) => {},
-    handleOnDrawingMouseUp: (ev: MouseEvent) => {},
-    handleOnDrawingMouseLeave: (ev: MouseEvent) => {},
-    handleOnDrawingBrushCricleMove: (ev: MouseEvent) => {},
-    handleZoomWheel: (e: WheelEvent) => {},
-    handleSphereWheel: (e: WheelEvent) => {},
-  };
+  mainAreaContainer: HTMLElement;
+  private nrrd_states: INrrdStates;
+  private gui_states: IGUIStates;
+  private protectedData: IProtected;
+  private cursorPage: ICursorPage;
+  private drawingPrameters: IDrawingEvents;
+  private dragOperator: DragOperator;
+
+  private setSyncsliceNum: () => void;
+  private setIsDrawFalse: (target: number) => void;
+  private flipDisplayImageByAxis: () => void;
+  private setEmptyCanvasSize: (axis?: "x" | "y" | "z") => void;
+  private filterDrawedImage: (
+    axis: "x" | "y" | "z",
+    sliceIndex: number,
+    paintedImages: IPaintImages
+  ) => IPaintImage;
+  private clearStoreImages: () => void;
+  private resizePaintArea: (factor: number) => void;
+  private resetPaintArea: (l?: number, t?: number) => void;
+  private convertCursorPoint: (
+    from: "x" | "y" | "z",
+    to: "x" | "y" | "z",
+    cursorNumX: number,
+    cursorNumY: number,
+    currentSliceIndex: number
+  ) =>
+    | {
+        currentIndex: number;
+        oldIndex: number;
+        convertCursorNumX: number;
+        convertCursorNumY: number;
+      }
+    | undefined;
+  private resetLayerCanvas: () => void;
+  private updateOriginAndChangedWH: () => void;
 
   eraserUrls: string[] = [];
   pencilUrls: string[] = [];
@@ -31,14 +61,70 @@ export default class DrawOperator extends CommToolsData {
   // need to return to parent
   start: () => void = () => {};
 
-  constructor(container: HTMLElement) {
-    super();
-    this.container = container;
+  constructor(
+    container: HTMLElement,
+    mainAreaContainer: HTMLElement,
+    nrrd_states: INrrdStates,
+    gui_states: IGUIStates,
+    protectedData: IProtected,
+    cursorPage: ICursorPage,
+    drawingPrameters: IDrawingEvents,
+    dragOperator: DragOperator,
 
-    this.initDrawOperator();
+    setSyncsliceNum: () => void,
+    setIsDrawFalse: (target: number) => void,
+    flipDisplayImageByAxis: () => void,
+    setEmptyCanvasSize: (axis?: "x" | "y" | "z") => void,
+    filterDrawedImage: (
+      axis: "x" | "y" | "z",
+      sliceIndex: number,
+      paintedImages: IPaintImages
+    ) => IPaintImage,
+    clearStoreImages: () => void,
+    resizePaintArea: (factor: number) => void,
+    resetPaintArea: (l?: number, t?: number) => void,
+    convertCursorPoint: (
+      from: "x" | "y" | "z",
+      to: "x" | "y" | "z",
+      cursorNumX: number,
+      cursorNumY: number,
+      currentSliceIndex: number
+    ) =>
+      | {
+          currentIndex: number;
+          oldIndex: number;
+          convertCursorNumX: number;
+          convertCursorNumY: number;
+        }
+      | undefined,
+    resetLayerCanvas: () => void,
+    updateOriginAndChangedWH: () => void
+  ) {
+    this.container = container;
+    this.mainAreaContainer = mainAreaContainer;
+    this.nrrd_states = nrrd_states;
+    this.gui_states = gui_states;
+    this.protectedData = protectedData;
+    this.cursorPage = cursorPage;
+    this.drawingPrameters = drawingPrameters;
+    this.dragOperator = dragOperator;
+
+    this.setSyncsliceNum = setSyncsliceNum;
+    this.setIsDrawFalse = setIsDrawFalse;
+    this.flipDisplayImageByAxis = flipDisplayImageByAxis;
+    this.setEmptyCanvasSize = setEmptyCanvasSize;
+    this.filterDrawedImage = filterDrawedImage;
+    this.clearStoreImages = clearStoreImages;
+    this.resizePaintArea = resizePaintArea;
+    this.resetPaintArea = resetPaintArea;
+    this.convertCursorPoint = convertCursorPoint;
+    this.resetLayerCanvas = resetLayerCanvas;
+    this.updateOriginAndChangedWH = updateOriginAndChangedWH;
+
+    this.init();
   }
 
-  private initDrawOperator() {
+  private init() {
     this.container.addEventListener("keydown", (ev: KeyboardEvent) => {
       if (ev.key === "Shift" && !this.gui_states.sphere) {
         this.protectedData.Is_Shift_Pressed = true;
@@ -95,9 +181,42 @@ export default class DrawOperator extends CommToolsData {
   }
 
   draw(opts?: IDrawOpts) {
+    // let subViewFolder: GUI;
+
     if (!!opts) {
       this.nrrd_states.getMask = opts?.getMaskData as any;
     }
+
+    // this.sceneIn = sceneIn;
+    // sceneIn.controls.enabled = false;
+
+    // if (this.gui_states.subView === false) {
+    //   sceneIn.subDiv && (sceneIn.subDiv.style.display = "none");
+    // }
+
+    // if (sceneIn.subDiv) {
+    //   subViewFolder = gui.addFolder("Sub View");
+    //   subViewFolder.add(this.gui_states, "resetView");
+    //   subViewFolder.add(this.gui_states, "subView").onChange((value) => {
+    //     if (value) {
+    //       sceneIn.controls.enabled = true;
+    //       sceneIn.subDiv && (sceneIn.subDiv.style.display = "block");
+    //     } else {
+    //       sceneIn.subDiv && (sceneIn.subDiv.style.display = "none");
+    //       sceneIn.controls.enabled = false;
+    //     }
+    //   });
+    //   subViewFolder
+    //     .add(this.gui_states, "subViewScale")
+    //     .min(0.25)
+    //     .max(2)
+    //     .step(0.01)
+    //     .onFinishChange((value) => {
+    //       sceneIn.subDiv && (sceneIn.subDiv.style.width = 200 * value + "px");
+    //       sceneIn.subDiv && (sceneIn.subDiv.style.height = 200 * value + "px");
+    //     });
+    // }
+
     this.paintOnCanvas();
   }
 
@@ -1635,5 +1754,34 @@ export default class DrawOperator extends CommToolsData {
     this.protectedData.displaySlices.forEach((slice, index) => {
       slice.repaint.call(slice);
     });
+  }
+
+  /******************************** redraw display canvas  ***************************************/
+
+  redrawDisplayCanvas() {
+    this.dragOperator.updateCurrentContrastSlice();
+    this.protectedData.canvases.displayCanvas.width =
+      this.protectedData.canvases.displayCanvas.width;
+    this.protectedData.canvases.displayCanvas.height =
+      this.protectedData.canvases.displayCanvas.height;
+    this.protectedData.canvases.originCanvas.width =
+      this.protectedData.canvases.originCanvas.width;
+    if (this.protectedData.currentShowingSlice) {
+      this.protectedData.currentShowingSlice.repaint.call(
+        this.protectedData.currentShowingSlice
+      );
+      this.protectedData.ctxes.displayCtx?.save();
+
+      this.flipDisplayImageByAxis();
+
+      this.protectedData.ctxes.displayCtx?.drawImage(
+        this.protectedData.currentShowingSlice.canvas,
+        0,
+        0,
+        this.nrrd_states.changedWidth,
+        this.nrrd_states.changedHeight
+      );
+      this.protectedData.ctxes.displayCtx?.restore();
+    }
   }
 }
