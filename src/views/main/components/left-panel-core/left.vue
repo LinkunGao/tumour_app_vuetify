@@ -390,7 +390,6 @@ watchEffect(() => {
       }
     } else {
       nrrdTools.clear();
-      nrrdTools.setShowInMainArea(true);
       nrrdTools.setAllSlices(allSlices);
 
       defaultRegAllSlices = [...allSlices];
@@ -408,7 +407,8 @@ watchEffect(() => {
           showNumber: true,
           getSliceNum,
         });
-        nrrdTools.draw(scene as Copper.copperScene, gui, { getMaskData });
+        nrrdTools.draw({ getMaskData });
+        nrrdTools.setupGUI(gui);
         scene?.addPreRenderCallbackFunction(nrrdTools.start);
         setUpGuiAfterLoading();
       } else {

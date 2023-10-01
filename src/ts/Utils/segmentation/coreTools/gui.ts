@@ -1,12 +1,13 @@
 import { GUI } from "dat.gui";
 import { switchEraserSize, switchPencilIcon } from "../../utils";
-import { IDrawingEvents, IGUIStates } from "./coreType";
+import { IDrawingEvents, IGUIStates, IProtected } from "./coreType";
 
 interface IConfigGUI {
   modeFolder: GUI;
   gui_states: IGUIStates;
   drawingCanvas: HTMLCanvasElement;
   drawingPrameters: IDrawingEvents;
+  protectedData: IProtected;
   eraserUrls: string[];
   pencilUrls: string[];
   mainPreSlices: any;
@@ -17,8 +18,9 @@ interface IConfigGUI {
   clearStoreImages: () => void;
   updateSlicesContrast: (value: number, flag: string) => void;
   resetPaintArea: () => void;
-  repraintAllContrastSlices: () => void;
   resizePaintArea: (factor: number) => void;
+  repraintCurrentContrastSlice: () => void;
+  setSyncsliceNum: () => void;
 }
 
 function setupGui(configs: IConfigGUI) {
@@ -135,7 +137,7 @@ function setupGui(configs: IConfigGUI) {
       configs.updateSlicesContrast(value, "windowHigh");
     })
     .onFinishChange(() => {
-      configs.repraintAllContrastSlices();
+      repraintAllContrastSlices(configs.protectedData.displaySlices);
 
       configs.gui_states.readyToUpdate = true;
     });
@@ -207,7 +209,7 @@ function setupGui(configs: IConfigGUI) {
   maskFolder
     .add(configs.gui_states, "downloadCurrentMask")
     .name("DownloadCurrentMask");
-  maskFolder.add(configs.gui_states, "exportMarks").name("ExportMask");
+  // maskFolder.add(configs.gui_states, "exportMarks").name("ExportMask");
 
   const contrastFolder = advanceFolder.addFolder("ContrastAdvanceSettings");
   contrastFolder
@@ -224,7 +226,7 @@ function setupGui(configs: IConfigGUI) {
       configs.updateSlicesContrast(value, "lowerThreshold");
     })
     .onFinishChange(() => {
-      configs.repraintAllContrastSlices();
+      repraintAllContrastSlices(configs.protectedData.displaySlices);
       configs.gui_states.readyToUpdate = true;
     });
   contrastFolder
@@ -241,7 +243,7 @@ function setupGui(configs: IConfigGUI) {
       configs.updateSlicesContrast(value, "upperThreshold");
     })
     .onFinishChange(() => {
-      configs.repraintAllContrastSlices();
+      repraintAllContrastSlices(configs.protectedData.displaySlices);
       configs.gui_states.readyToUpdate = true;
     });
   contrastFolder
@@ -258,10 +260,16 @@ function setupGui(configs: IConfigGUI) {
       configs.updateSlicesContrast(value, "windowLow");
     })
     .onFinishChange(() => {
-      configs.repraintAllContrastSlices();
+      repraintAllContrastSlices(configs.protectedData.displaySlices);
       configs.gui_states.readyToUpdate = true;
     });
   actionsFolder.open();
+}
+
+function repraintAllContrastSlices(displaySlices: any[]) {
+  displaySlices.forEach((slice, index) => {
+    slice.volume.repaintAllSlices();
+  });
 }
 
 // remove all folders gui controllers

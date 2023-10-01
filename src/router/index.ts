@@ -23,19 +23,19 @@ const routes = [
   },
 ];
 
-// const router = createRouter({
-//   history: createWebHistory(process.env.BASE_URL),
-//   routes,
-// });
-
-// export default router;
-
 const router = createRouter({
-  history: createWebHashHistory(),
-  linkActiveClass: "active",
+  history: createWebHistory(process.env.BASE_URL),
   routes,
 });
+
 export default router;
+
+// const router = createRouter({
+//   history: createWebHashHistory(),
+//   linkActiveClass: "active",
+//   routes,
+// });
+// export default router;
 
 // console.log(process.env.BASE_URL);
 

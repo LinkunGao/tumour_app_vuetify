@@ -82,7 +82,10 @@ interface IProtected {
   Is_Draw: boolean;
   axis: "x" | "y" | "z";
   maskData: IMaskData;
+  previousDrawingImage?: ImageData;
+
   canvases: {
+    originCanvas: HTMLCanvasElement | any;
     drawingCanvas: HTMLCanvasElement;
     displayCanvas: HTMLCanvasElement;
     drawingCanvasLayerMaster: HTMLCanvasElement;
@@ -118,8 +121,8 @@ interface IGUIStates {
   cursor: string;
   label: string;
   sphere: boolean;
-  subView: boolean;
-  subViewScale: number;
+  // subView: boolean;
+  // subViewScale: number;
   readyToUpdate: boolean;
   defaultPaintCursor: string;
   max_sensitive: number;
@@ -128,8 +131,8 @@ interface IGUIStates {
   undo: () => void;
   downloadCurrentMask: () => void;
   resetZoom: () => void;
-  resetView: () => void;
-  exportMarks: () => void;
+  // resetView: () => void;
+  // exportMarks: () => void;
 }
 
 interface INrrdStates {
@@ -200,8 +203,41 @@ interface IDrawOpts {
     clearAllFlag?: boolean
   ) => void;
 }
+type UndoLayerType = {
+  label1: Array<HTMLImageElement>;
+  label2: Array<HTMLImageElement>;
+  label3: Array<HTMLImageElement>;
+};
+
+interface IUndoType {
+  sliceIndex: number;
+  layers: UndoLayerType;
+}
+
+interface ICursorPage {
+  x: {
+    cursorPageX: number;
+    cursorPageY: number;
+    index: number;
+    updated: boolean;
+  };
+  y: {
+    cursorPageX: number;
+    cursorPageY: number;
+    index: number;
+    updated: boolean;
+  };
+  z: {
+    cursorPageX: number;
+    cursorPageY: number;
+    index: number;
+    updated: boolean;
+  };
+}
 
 export {
+  ICommXYZ,
+  ICommXY,
   IDownloadImageConfig,
   IConvertObjType,
   IDragPrameters,
@@ -216,4 +252,6 @@ export {
   IStoredPaintImages,
   ISkipSlicesDictType,
   IMaskData,
+  IUndoType,
+  ICursorPage,
 };

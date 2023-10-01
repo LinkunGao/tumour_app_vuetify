@@ -23,7 +23,15 @@ interface IDragEffectCanvases {
 export default class DragOperator {
   container: HTMLElement;
 
-  private dragPrameters: IDragPrameters;
+  private dragPrameters: IDragPrameters = {
+    move: 0,
+    y: 0,
+    h: 0,
+    sensivity: 1,
+    handleOnDragMouseUp: (ev: MouseEvent) => {},
+    handleOnDragMouseDown: (ev: MouseEvent) => {},
+    handleOnDragMouseMove: (ev: MouseEvent) => {},
+  };
   private drawingPrameters: IDrawingEvents;
   private sensitiveArray: number[] = [];
   private showDragNumberDiv: HTMLDivElement;
@@ -47,7 +55,6 @@ export default class DragOperator {
     nrrd_sates: INrrdStates,
     gui_states: IGUIStates,
     protectedData: IProtected,
-    dragPrameters: IDragPrameters,
     drawingPrameters: IDrawingEvents,
     setSyncsliceNum: () => void,
     setIsDrawFalse: (target: number) => void,
@@ -60,7 +67,6 @@ export default class DragOperator {
     ) => IPaintImage
   ) {
     this.container = container;
-    this.dragPrameters = dragPrameters;
     this.drawingPrameters = drawingPrameters;
     this.nrrd_states = nrrd_sates;
     this.gui_states = gui_states;

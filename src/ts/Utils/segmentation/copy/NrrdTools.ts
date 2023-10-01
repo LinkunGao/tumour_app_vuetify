@@ -2,38 +2,256 @@ import {
   nrrdSliceType,
   exportPaintImageType,
   storeExportPaintImageType,
+  exportPaintImagesType,
   loadingBarType,
 } from "../../types/types";
 import { GUI } from "dat.gui";
 import { setupGui } from "./coreTools/gui";
 
-import { autoFocusDiv } from "./coreTools/divControlTools";
+import { switchPencilIcon } from "../utils";
+
+import { saveFileAsJson } from "../download";
 import {
+  restructData,
+  convertReformatDataToBlob,
+} from "../workers/reformatSaveDataWorker";
+
+import { autoFocusDiv, enableDownload } from "./coreTools/divControlTools";
+import {
+  IDownloadImageConfig,
+  IDrawingEvents,
+  IProtected,
+  IGUIStates,
+  INrrdStates,
+  IDrawOpts,
   IPaintImage,
   IPaintImages,
   IStoredPaintImages,
   ISkipSlicesDictType,
   IMaskData,
   IDragOpts,
+  ICursorPage,
 } from "./coreTools/coreType";
 import DragOperator from "./DragOperator";
 import DrawOperator from "./DrawOperator";
 
-export class NrrdTools extends DrawOperator {
+export class NrrdTools {
   container: HTMLDivElement;
 
   // A base conatainer to append displayCanvas and drawingCanvas
-  dragOperator: DragOperator;
+  private mainAreaContainer: HTMLDivElement = document.createElement("div");
+
+  private protectedData: IProtected;
   storedPaintImages: IStoredPaintImages | undefined;
+
+  private dragOperator: DragOperator;
+  private drawOperator: DrawOperator;
 
   private paintedImage: IPaintImage | undefined;
 
   private initState: boolean = true;
   private preTimer: any;
 
+  private nrrd_states: INrrdStates = {
+    originWidth: 0,
+    originHeight: 0,
+    nrrd_x_mm: 0,
+    nrrd_y_mm: 0,
+    nrrd_z_mm: 0,
+    nrrd_x_pixel: 0,
+    nrrd_y_pixel: 0,
+    nrrd_z_pixel: 0,
+    changedWidth: 0,
+    changedHeight: 0,
+    oldIndex: 0,
+    currentIndex: 0,
+    maxIndex: 0,
+    minIndex: 0,
+    RSARatio: 0,
+    voxelSpacing: [],
+    spaceOrigin: [],
+    dimensions: [],
+    loadMaskJson: false,
+    ratios: { x: 1, y: 1, z: 1 },
+    sharedPlace: { x: [-1], y: [-1], z: [-1] },
+    contrastNum: 0,
+
+    showContrast: false,
+    enableCursorChoose: false,
+    isCursorSelect: false,
+    cursorPageX: 0,
+    cursorPageY: 0,
+    sphereOrigin: { x: [0, 0, 0], y: [0, 0, 0], z: [0, 0, 0] },
+    spherePlanB: true,
+    sphereRadius: 10,
+    Mouse_Over_x: 0,
+    Mouse_Over_y: 0,
+    Mouse_Over: false,
+    stepClear: 1,
+    sizeFoctor: 1,
+    clearAllFlag: false,
+    previousPanelL: -99999,
+    previousPanelT: -99999,
+    switchSliceFlag: false,
+    labels: ["label1", "label2", "label3"],
+
+    getMask: (
+      mask: ImageData,
+      sliceId: number,
+      label: string,
+      width: number,
+      height: number,
+      clearAllFlag: boolean
+    ) => {},
+    drawStartPos: { x: 1, y: 1 },
+  };
+
+  private cursorPage: ICursorPage = {
+    x: {
+      cursorPageX: 0,
+      cursorPageY: 0,
+      index: 0,
+      updated: false,
+    },
+    y: {
+      cursorPageX: 0,
+      cursorPageY: 0,
+      index: 0,
+      updated: false,
+    },
+    z: {
+      cursorPageX: 0,
+      cursorPageY: 0,
+      index: 0,
+      updated: false,
+    },
+  };
+
+  private gui_states: IGUIStates = {
+    mainAreaSize: 1,
+    dragSensitivity: 75,
+    Eraser: false,
+    globalAlpha: 0.7,
+    lineWidth: 2,
+    color: "#f50a33",
+    segmentation: true,
+    fillColor: "#00ff00",
+    brushColor: "#00ff00",
+    brushAndEraserSize: 15,
+    cursor: "dot",
+    label: "label1",
+    sphere: false,
+    readyToUpdate: true,
+    defaultPaintCursor: switchPencilIcon("dot"),
+    max_sensitive: 100,
+    // EraserSize: 25,
+    clear: () => {
+      this.drawOperator.clearPaint();
+    },
+    clearAll: () => {
+      const text = "Are you sure remove annotations on All slice?";
+      if (confirm(text) === true) {
+        this.nrrd_states.clearAllFlag = true;
+        this.drawOperator.clearPaint();
+        this.clearStoreImages();
+      }
+      this.nrrd_states.clearAllFlag = false;
+    },
+    undo: () => {
+      this.drawOperator.undoLastPainting();
+    },
+    downloadCurrentMask: () => {
+      const config: IDownloadImageConfig = {
+        axis: this.protectedData.axis,
+        currentIndex: this.nrrd_states.currentIndex,
+        drawingCanvas: this.protectedData.canvases.drawingCanvas,
+        originWidth: this.nrrd_states.originWidth,
+        originHeight: this.nrrd_states.originHeight,
+      };
+      enableDownload(config);
+    },
+    resetZoom: () => {
+      this.nrrd_states.sizeFoctor = 1;
+      this.resizePaintArea(1);
+      this.resetPaintArea();
+    },
+    // subView: false,
+    // subViewScale: 1.0,
+    // resetView: () => {
+    //   this.sceneIn?.resetView();
+    // },
+    // exportMarks: () => {
+    //   this.exportData();
+    // },
+  };
+
+  private drawingPrameters: IDrawingEvents = {
+    handleOnDrawingMouseDown: (ev: MouseEvent) => {},
+    handleOnDrawingMouseMove: (ev: MouseEvent) => {},
+    handleOnPanMouseMove: (ev: MouseEvent) => {},
+    handleOnDrawingMouseUp: (ev: MouseEvent) => {},
+    handleOnDrawingMouseLeave: (ev: MouseEvent) => {},
+    handleOnDrawingBrushCricleMove: (ev: MouseEvent) => {},
+    handleZoomWheel: (e: WheelEvent) => {},
+    handleSphereWheel: (e: WheelEvent) => {},
+  };
+
   constructor(container: HTMLDivElement) {
-    super(container);
     this.container = container;
+    const canvases = this.generateCanvases();
+    this.protectedData = {
+      allSlicesArray: [],
+      displaySlices: [],
+      backUpDisplaySlices: [],
+      skipSlicesDic: {},
+      currentShowingSlice: undefined,
+      mainPreSlices: undefined,
+      Is_Shift_Pressed: false,
+      Is_Draw: false,
+      axis: "z",
+      maskData: {
+        // used to store one label all marks
+        paintImagesLabel1: { x: [], y: [], z: [] },
+        paintImagesLabel2: { x: [], y: [], z: [] },
+        paintImagesLabel3: { x: [], y: [], z: [] },
+
+        // used to store display marks with multiple labels
+        paintImages: { x: [], y: [], z: [] },
+      },
+      canvases: {
+        originCanvas: null,
+        drawingCanvas: canvases[0],
+        displayCanvas: canvases[1],
+        drawingCanvasLayerMaster: canvases[2],
+        drawingCanvasLayerOne: canvases[3],
+        drawingCanvasLayerTwo: canvases[4],
+        drawingCanvasLayerThree: canvases[5],
+        drawingSphereCanvas: canvases[6],
+        emptyCanvas: canvases[7],
+      },
+      ctxes: {
+        drawingCtx: canvases[0].getContext("2d") as CanvasRenderingContext2D,
+        displayCtx: canvases[1].getContext("2d") as CanvasRenderingContext2D,
+        drawingLayerMasterCtx: canvases[2].getContext(
+          "2d"
+        ) as CanvasRenderingContext2D,
+        drawingLayerOneCtx: canvases[3].getContext(
+          "2d"
+        ) as CanvasRenderingContext2D,
+        drawingLayerTwoCtx: canvases[4].getContext(
+          "2d"
+        ) as CanvasRenderingContext2D,
+        drawingLayerThreeCtx: canvases[5].getContext(
+          "2d"
+        ) as CanvasRenderingContext2D,
+        drawingSphereCtx: canvases[6].getContext(
+          "2d"
+        ) as CanvasRenderingContext2D,
+        emptyCtx: canvases[7].getContext("2d", {
+          willReadFrequently: true,
+        }) as CanvasRenderingContext2D,
+      },
+    };
 
     this.storedPaintImages = {
       label1: this.protectedData.maskData.paintImagesLabel1,
@@ -44,6 +262,7 @@ export class NrrdTools extends DrawOperator {
     this.protectedData.previousDrawingImage =
       this.protectedData.ctxes.emptyCtx.createImageData(1, 1);
     this.init();
+
     this.dragOperator = new DragOperator(
       this.container,
       this.nrrd_states,
@@ -56,19 +275,41 @@ export class NrrdTools extends DrawOperator {
       this.setEmptyCanvasSize,
       this.filterDrawedImage
     );
+
+    this.drawOperator = new DrawOperator(
+      this.container,
+      this.mainAreaContainer,
+      this.nrrd_states,
+      this.gui_states,
+      this.protectedData,
+      this.cursorPage,
+      this.drawingPrameters,
+      this.dragOperator,
+      this.setSyncsliceNum,
+      this.setIsDrawFalse,
+      this.flipDisplayImageByAxis,
+      this.setEmptyCanvasSize,
+      this.filterDrawedImage,
+      this.clearStoreImages,
+      this.resizePaintArea,
+      this.resetPaintArea,
+      this.convertCursorPoint,
+      this.resetLayerCanvas,
+      this.updateOriginAndChangedWH
+    );
   }
 
   drag(opts?: IDragOpts) {
     this.dragOperator.drag(opts);
   }
-  // draw(opts?: IDrawOpts) {
-  //   this.drawOperator.draw(opts);
-  // }
-  // start() {
-  //   console.log(this.drawOperator.start);
+  draw(opts?: IDrawOpts) {
+    this.drawOperator.draw(opts);
+  }
+  start() {
+    console.log(this.drawOperator.start);
 
-  //   return this.drawOperator.start;
-  // }
+    return this.drawOperator.start;
+  }
 
   setupGUI(gui: GUI) {
     /**
@@ -81,24 +322,30 @@ export class NrrdTools extends DrawOperator {
       gui_states: this.gui_states,
       drawingCanvas: this.protectedData.canvases.drawingCanvas,
       drawingPrameters: this.drawingPrameters,
-      eraserUrls: this.eraserUrls,
-      pencilUrls: this.pencilUrls,
+      eraserUrls: this.drawOperator.eraserUrls,
+      pencilUrls: this.drawOperator.pencilUrls,
       mainPreSlices: this.protectedData.mainPreSlices,
       canvasSizeFoctor: this.nrrd_states.sizeFoctor,
       protectedData: this.protectedData,
       removeDragMode: this.dragOperator.removeDragMode,
       configDragMode: this.dragOperator.configDragMode,
-      clearPaint: this.clearPaint,
+      clearPaint: this.drawOperator.clearPaint,
       clearStoreImages: this.clearStoreImages,
-      updateSlicesContrast: this.updateSlicesContrast,
+      updateSlicesContrast: this.drawOperator.updateSlicesContrast,
       resetPaintArea: this.resetPaintArea,
       resizePaintArea: this.resizePaintArea,
-      repraintCurrentContrastSlice: this.repraintCurrentContrastSlice,
-      setSyncsliceNum: this.setSyncsliceNum,
     };
     setupGui(guiOptions);
   }
 
+  private generateCanvases() {
+    const canvasArr: Array<HTMLCanvasElement> = [];
+    for (let i = 0; i < 8; i++) {
+      const canvas = document.createElement("canvas");
+      canvasArr.push(canvas);
+    }
+    return canvasArr;
+  }
   /**
    * A initialise function for nrrd_tools
    */
@@ -113,14 +360,13 @@ export class NrrdTools extends DrawOperator {
   /**
    *
    * entry function
-   *   * {
+   *
+   * @param allSlices - all nrrd contrast slices
+   * {
    *    x:slice,
    *    y:slice,
    *    z:slice
    * }
-   *
-   * @param allSlices - all nrrd contrast slices
- 
    */
   setAllSlices(allSlices: Array<nrrdSliceType>) {
     this.protectedData.allSlicesArray = [...allSlices];
@@ -218,7 +464,7 @@ export class NrrdTools extends DrawOperator {
             imageData
           );
           this.protectedData.ctxes.emptyCtx.putImageData(imageDataLabel1, 0, 0);
-          this.storeEachLayerImage(i, "label1");
+          this.drawOperator.storeEachLayerImage(i, "label1");
         }
         if (masksData["label2"][i].data.length > 0) {
           this.setEmptyCanvasSize();
@@ -228,7 +474,7 @@ export class NrrdTools extends DrawOperator {
             imageData
           );
           this.protectedData.ctxes.emptyCtx.putImageData(imageDataLabel2, 0, 0);
-          this.storeEachLayerImage(i, "label2");
+          this.drawOperator.storeEachLayerImage(i, "label2");
         }
         if (masksData["label3"][i].data.length > 0) {
           this.setEmptyCanvasSize();
@@ -238,11 +484,11 @@ export class NrrdTools extends DrawOperator {
             imageData
           );
           this.protectedData.ctxes.emptyCtx.putImageData(imageDataLabel3, 0, 0);
-          this.storeEachLayerImage(i, "label3");
+          this.drawOperator.storeEachLayerImage(i, "label3");
         }
         this.setEmptyCanvasSize();
         this.protectedData.ctxes.emptyCtx.putImageData(imageData, 0, 0);
-        this.storeAllImages(i, "default");
+        this.drawOperator.storeAllImages(i, "default");
       }
 
       this.nrrd_states.loadMaskJson = false;
@@ -252,11 +498,16 @@ export class NrrdTools extends DrawOperator {
       }
     }
   }
-
   private setShowInMainArea() {
     this.nrrd_states.showContrast = true;
   }
 
+  setEraserUrls(urls: string[]) {
+    this.drawOperator.setEraserUrls(urls);
+  }
+  setPencilIconUrls(urls: string[]) {
+    this.drawOperator.setPencilIconUrls(urls);
+  }
   getCurrentImageDimension() {
     return this.nrrd_states.dimensions;
   }
@@ -356,7 +607,7 @@ export class NrrdTools extends DrawOperator {
     }
   }
 
-  convertCursorPoint(
+  private convertCursorPoint(
     from: "x" | "y" | "z",
     to: "x" | "y" | "z",
     cursorNumX: number,
@@ -595,7 +846,7 @@ export class NrrdTools extends DrawOperator {
     this.resetDisplaySlicesStatus();
     // for sphere plan a
     if (this.gui_states.sphere && !this.nrrd_states.spherePlanB) {
-      this.drawSphere(
+      this.drawOperator.drawSphere(
         this.nrrd_states.sphereOrigin[axisTo][0],
         this.nrrd_states.sphereOrigin[axisTo][1],
         this.nrrd_states.sphereRadius
@@ -625,7 +876,7 @@ export class NrrdTools extends DrawOperator {
     // To effectively reduce the js memory garbage
     this.protectedData.allSlicesArray.length = 0;
     this.protectedData.displaySlices.length = 0;
-    this.undoArray.length = 0;
+    this.drawOperator.undoArray.length = 0;
     this.protectedData.maskData.paintImages.x.length = 0;
     this.protectedData.maskData.paintImages.y.length = 0;
     this.protectedData.maskData.paintImages.z.length = 0;
@@ -721,7 +972,7 @@ export class NrrdTools extends DrawOperator {
     return this.nrrd_states.showContrast;
   }
 
-  setIsDrawFalse(target: number) {
+  private setIsDrawFalse(target: number) {
     this.preTimer = setTimeout(() => {
       this.protectedData.Is_Draw = false;
       if (this.preTimer) {
@@ -789,7 +1040,7 @@ export class NrrdTools extends DrawOperator {
     // update the show number div on top area
     this.dragOperator.updateShowNumDiv(this.nrrd_states.contrastNum);
     // repaint all contrast images
-    this.repraintCurrentContrastSlice();
+    this.drawOperator.repraintCurrentContrastSlice();
     // resize the draw/drawOutLayer/display canvas size
     this.resizePaintArea(this.nrrd_states.sizeFoctor);
     this.resetPaintArea();
@@ -832,7 +1083,7 @@ export class NrrdTools extends DrawOperator {
     this.nrrd_states.oldIndex =
       this.protectedData.mainPreSlices.initIndex * this.nrrd_states.RSARatio;
     this.nrrd_states.currentIndex = this.protectedData.mainPreSlices.initIndex;
-    this.undoArray = [
+    this.drawOperator.undoArray = [
       {
         sliceIndex: this.nrrd_states.currentIndex,
         layers: { label1: [], label2: [], label3: [] },
@@ -851,7 +1102,7 @@ export class NrrdTools extends DrawOperator {
     }
   }
 
-  updateOriginAndChangedWH() {
+  private updateOriginAndChangedWH() {
     this.nrrd_states.originWidth =
       this.protectedData.canvases.originCanvas.width;
     this.nrrd_states.originHeight =
@@ -864,7 +1115,7 @@ export class NrrdTools extends DrawOperator {
     this.resetPaintArea();
   }
 
-  setSyncsliceNum() {
+  private setSyncsliceNum() {
     this.protectedData.displaySlices.forEach((slice, index) => {
       if (index !== 0) {
         slice.index = this.protectedData.mainPreSlices.index;
@@ -876,7 +1127,7 @@ export class NrrdTools extends DrawOperator {
     this.mainAreaContainer.appendChild(loadingbar);
   }
 
-  clearStoreImages() {
+  private clearStoreImages() {
     this.protectedData.maskData.paintImages.x.length = 0;
     this.protectedData.maskData.paintImages.y.length = 0;
     this.protectedData.maskData.paintImages.z.length = 0;
@@ -892,7 +1143,7 @@ export class NrrdTools extends DrawOperator {
     this.initPaintImages(this.nrrd_states.dimensions);
   }
 
-  resetPaintArea(l?: number, t?: number) {
+  private resetPaintArea(l?: number, t?: number) {
     if (l && t) {
       this.protectedData.canvases.displayCanvas.style.left =
         this.protectedData.canvases.drawingCanvas.style.left = l + "px";
@@ -904,7 +1155,7 @@ export class NrrdTools extends DrawOperator {
     }
   }
 
-  resetLayerCanvas() {
+  private resetLayerCanvas() {
     this.protectedData.canvases.drawingCanvasLayerMaster.width =
       this.protectedData.canvases.drawingCanvasLayerMaster.width;
     this.protectedData.canvases.drawingCanvasLayerOne.width =
@@ -939,7 +1190,7 @@ export class NrrdTools extends DrawOperator {
     }
   }
 
-  resizePaintArea(factor: number) {
+  private resizePaintArea(factor: number) {
     /**
      * clear canvas
      */
@@ -981,7 +1232,7 @@ export class NrrdTools extends DrawOperator {
       this.nrrd_states.changedWidth;
     this.protectedData.canvases.drawingCanvasLayerThree.height =
       this.nrrd_states.changedHeight;
-    this.redrawDisplayCanvas();
+    this.drawOperator.redrawDisplayCanvas();
     this.reloadMaskToLabel(
       this.protectedData.maskData.paintImages,
       this.protectedData.ctxes.drawingLayerMasterCtx
@@ -1062,7 +1313,7 @@ export class NrrdTools extends DrawOperator {
     }
   }
 
-  flipDisplayImageByAxis() {
+  private flipDisplayImageByAxis() {
     if (this.protectedData.axis === "x") {
       this.protectedData.ctxes.displayCtx?.scale(-1, -1);
 
@@ -1078,6 +1329,15 @@ export class NrrdTools extends DrawOperator {
       );
     }
   }
+  private filterDrawedImage(
+    axis: "x" | "y" | "z",
+    sliceIndex: number,
+    paintedImages: IPaintImages
+  ) {
+    return paintedImages[axis].filter((item) => {
+      return item.index === sliceIndex;
+    })[0];
+  }
 
   private clearDictionary(dic: ISkipSlicesDictType) {
     for (var key in dic) {
@@ -1086,7 +1346,7 @@ export class NrrdTools extends DrawOperator {
   }
 
   // set the empty canvas width and height, to reduce duplicate codes
-  setEmptyCanvasSize(axis?: "x" | "y" | "z") {
+  private setEmptyCanvasSize(axis?: "x" | "y" | "z") {
     switch (!!axis ? axis : this.protectedData.axis) {
       case "x":
         this.protectedData.canvases.emptyCanvas.width =
@@ -1109,32 +1369,22 @@ export class NrrdTools extends DrawOperator {
     }
   }
 
-  /******************************** redraw display canvas  ***************************************/
+  private exportData() {
+    let exportDataFormat: exportPaintImagesType = { x: [], y: [], z: [] };
 
-  redrawDisplayCanvas() {
-    this.dragOperator.updateCurrentContrastSlice();
-    this.protectedData.canvases.displayCanvas.width =
-      this.protectedData.canvases.displayCanvas.width;
-    this.protectedData.canvases.displayCanvas.height =
-      this.protectedData.canvases.displayCanvas.height;
-    this.protectedData.canvases.originCanvas.width =
-      this.protectedData.canvases.originCanvas.width;
-    if (this.protectedData.currentShowingSlice) {
-      this.protectedData.currentShowingSlice.repaint.call(
-        this.protectedData.currentShowingSlice
-      );
-      this.protectedData.ctxes.displayCtx?.save();
-
-      this.flipDisplayImageByAxis();
-
-      this.protectedData.ctxes.displayCtx?.drawImage(
-        this.protectedData.currentShowingSlice.canvas,
-        0,
-        0,
-        this.nrrd_states.changedWidth,
-        this.nrrd_states.changedHeight
-      );
-      this.protectedData.ctxes.displayCtx?.restore();
+    window.alert("Export masks, starting!!!");
+    const masks = restructData(
+      this.protectedData.maskData.paintImages.z,
+      this.nrrd_states.nrrd_z_pixel,
+      this.nrrd_states.nrrd_x_pixel,
+      this.nrrd_states.nrrd_y_pixel
+    );
+    const blob = convertReformatDataToBlob(masks);
+    if (blob) {
+      saveFileAsJson(blob, "copper3D_export data_z.json");
+      window.alert("Export masks successfully!!!");
+    } else {
+      window.alert("Export failed!");
     }
   }
 }

@@ -29,7 +29,11 @@ export default defineConfig({
       compress: true,
     }),
   ],
-  define: { "process.env": {} },
+  define: {
+    "process.env": {
+      BASE_URL: "/Tumour_App_Vuetify/",
+    },
+  },
   resolve: {
     alias: {
       "@": fileURLToPath(new URL("./src", import.meta.url)),
