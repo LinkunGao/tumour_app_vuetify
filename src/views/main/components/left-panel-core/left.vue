@@ -1,8 +1,8 @@
 <template>
   <div style="height: 100vh">
     <div id="bg" ref="base_container">
-      <div ref="c_gui" id="gui"></div>
-      <div ref="nrrd_c" class="nrrd_c"></div>
+      <div v-show="debug_mode" ref="c_gui" id="gui"></div>
+      <div ref="canvas_container" class="canvas_container"></div>
 
       <Upload
         :dialog="dialog"
@@ -10,7 +10,7 @@
         @get-load-files-urls="readyToLoad"
       ></Upload>
     </div>
-    <div class="navBar" ref="navBar">
+    <div class="nav_bar_container" ref="nav_bar_container">
       <NavBar
         :file-num="fileNum"
         :max="max"
@@ -39,6 +39,7 @@ import { storeToRefs } from "pinia";
 import {
   IStoredMasks,
   IReplaceMask,
+  ISaveSphere,
   ILoadUrls,
   IRegRquest,
   ILoadedMeshes,
@@ -52,6 +53,7 @@ import {
   useNrrdCaseUrlsStore,
   useInitMarksStore,
   useReplaceMarksStore,
+  useSaveSphereStore,
   useSaveMasksStore,
   useMaskStore,
   useClearMaskMeshStore,
@@ -64,6 +66,7 @@ import {
   revokeAppUrls,
   revokeRegisterNrrdImages,
   getEraserUrlsForOffLine,
+  getCursorUrlsForOffLine,
 } from "@/views/main/components/tools";
 import emitter from "@/plugins/bus";
 
@@ -77,8 +80,9 @@ let dialog = ref(false);
 
 let base_container = ref<HTMLDivElement>();
 let c_gui = ref<HTMLDivElement>();
-let nrrd_c = ref<HTMLDivElement>();
-let navBar = ref<HTMLDivElement>();
+let canvas_container = ref<HTMLDivElement>();
+let nav_bar_container = ref<HTMLDivElement>();
+let debug_mode = ref(false);
 
 let scene: Copper.copperScene | undefined;
 let pre_slices = ref();
@@ -105,11 +109,9 @@ let loadCases = true;
 let loadOrigin = false;
 
 let currentCaseId = "";
-let showIntro = ref(false);
 let regCheckboxElement: HTMLInputElement;
 
 let state = {
-  introduction: showIntro.value,
   showContrast: false,
   switchCase: "",
   showRegisterImages: true,
@@ -129,6 +131,7 @@ const { cases } = storeToRefs(useFileCountStore());
 const { getFilesNames } = useFileCountStore();
 const { sendInitMask } = useInitMarksStore();
 const { sendReplaceMask } = useReplaceMarksStore();
+const { sendSaveSphere } = useSaveSphereStore();
 const { sendSaveMask } = useSaveMasksStore();
 const { maskBackend } = storeToRefs(useMaskStore());
 const { getMaskDataBackend } = useMaskStore();
@@ -145,13 +148,19 @@ const worker = new Worker(
 );
 
 const eraserUrls = getEraserUrlsForOffLine();
+const cursorUrls = getCursorUrlsForOffLine();
+
+function onEmitter() {
+  emitter.on("show_debug_mode", (flag) => {
+    debug_mode.value = flag as boolean;
+  });
+}
 
 onMounted(async () => {
+  onEmitter();
   emitter.on("containerHight", (h) => {
-    console.log(h);
-
     (base_container.value as HTMLDivElement).style.height = `${h}vh`;
-    // (navBar.value as HTMLDivElement).style.height = `${60}px`;
+    // (nav_bar_container.value as HTMLDivElement).style.height = `${60}px`;
   });
   await getInitData();
   c_gui.value?.appendChild(gui.domElement);
@@ -164,10 +173,12 @@ onMounted(async () => {
     }
   );
 
-  nrrdTools = new Copper.NrrdTools(nrrd_c.value as HTMLDivElement);
+  nrrdTools = new Copper.NrrdTools(canvas_container.value as HTMLDivElement);
   // for offline working
 
+  // nrrdTools.setBaseCanvasesSize(1.5);
   nrrdTools.setEraserUrls(eraserUrls);
+  nrrdTools.setPencilIconUrls(cursorUrls);
 
   // sphere plan b
   toolsState = nrrdTools.getNrrdToolsSettings();
@@ -178,7 +189,9 @@ onMounted(async () => {
   loadingContainer = loadBarMain.loadingContainer;
   progress = loadBarMain.progress;
 
-  (nrrd_c.value as HTMLDivElement).appendChild(loadBarMain.loadingContainer);
+  (canvas_container.value as HTMLDivElement).appendChild(
+    loadBarMain.loadingContainer
+  );
 
   document.addEventListener("keydown", (e) => {
     if (e.code === "KeyF") {
@@ -192,9 +205,9 @@ onMounted(async () => {
 
   emitter.on("leftFullScreen", (flag) => {
     if (flag) {
-      (navBar.value as HTMLDivElement).style.width = "90%";
+      (nav_bar_container.value as HTMLDivElement).style.width = "90%";
     } else {
-      (navBar.value as HTMLDivElement).style.width = "60%";
+      (nav_bar_container.value as HTMLDivElement).style.width = "60%";
     }
   });
 });
@@ -335,6 +348,16 @@ const switchAnimationStatus = (status: "flex" | "none", text?: string) => {
   !!text && (progress.innerText = text);
 };
 
+const getSphereData = async (sphereOrigin: number[], sphereRadius: number) => {
+  const sphereData: ISaveSphere = {
+    caseId: currentCaseId,
+    sliceId: sphereOrigin[2],
+    sphereRadiusMM: sphereRadius,
+    sphereOriginMM: sphereOrigin,
+  };
+  await sendSaveSphere(sphereData);
+};
+
 const getMaskData = async (
   image: ImageData,
   sliceId: number,
@@ -407,7 +430,7 @@ watchEffect(() => {
           showNumber: true,
           getSliceNum,
         });
-        nrrdTools.draw({ getMaskData });
+        nrrdTools.draw({ getMaskData, getSphereData });
         nrrdTools.setupGUI(gui);
         scene?.addPreRenderCallbackFunction(nrrdTools.start);
         setUpGuiAfterLoading();
@@ -603,15 +626,6 @@ const loadAllNrrds = (
 
 function setupGui() {
   state.switchCase = cases.value?.names[0] as string;
-  gui
-    .add(state, "introduction")
-    .name("Intro Panel")
-    .onChange((flag) => {
-      // flag
-      //   ? ((intro.value as HTMLDivElement).style.display = "flex")
-      //   : ((intro.value as HTMLDivElement).style.display = "none");
-      showIntro.value = flag;
-    });
 
   gui
     .add(state, "switchCase", cases.value?.names as string[])
@@ -797,7 +811,7 @@ function switchRegCheckBoxStatus(
   -ms-user-select: none;
   user-select: none;
 }
-.nrrd_c {
+.canvas_container {
   /* position: fixed; */
   position: absolute;
   width: 100%;
@@ -807,7 +821,7 @@ function switchRegCheckBoxStatus(
   align-items: center;
 }
 
-.navBar {
+.nav_bar_container {
   display: flex;
   align-items: center;
   justify-content: center;

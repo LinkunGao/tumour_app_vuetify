@@ -7,12 +7,12 @@ import {
   ICommXY,
   IUndoType,
 } from "./coreTools/coreType";
-import CommToolsData from "./CommToolsData";
+import { CommToolsData } from "./CommToolsData";
 import { switchEraserSize, switchPencilIcon } from "../utils";
 
-export default class DrawOperator extends CommToolsData {
+export class DrawToolCore extends CommToolsData {
   container: HTMLElement;
-  mainAreaContainer: HTMLDivElement = document.createElement("div");
+  mainAreaContainer: HTMLDivElement;
   drawingPrameters: IDrawingEvents = {
     handleOnDrawingMouseDown: (ev: MouseEvent) => {},
     handleOnDrawingMouseMove: (ev: MouseEvent) => {},
@@ -32,13 +32,15 @@ export default class DrawOperator extends CommToolsData {
   start: () => void = () => {};
 
   constructor(container: HTMLElement) {
-    super();
+    const mainAreaContainer = document.createElement("div");
+    super(container, mainAreaContainer);
     this.container = container;
+    this.mainAreaContainer = mainAreaContainer;
 
-    this.initDrawOperator();
+    this.initDrawToolCore();
   }
 
-  private initDrawOperator() {
+  private initDrawToolCore() {
     this.container.addEventListener("keydown", (ev: KeyboardEvent) => {
       if (ev.key === "Shift" && !this.gui_states.sphere) {
         this.protectedData.Is_Shift_Pressed = true;
@@ -97,6 +99,7 @@ export default class DrawOperator extends CommToolsData {
   draw(opts?: IDrawOpts) {
     if (!!opts) {
       this.nrrd_states.getMask = opts?.getMaskData as any;
+      this.nrrd_states.getSphere = opts?.getSphereData as any;
     }
     this.paintOnCanvas();
   }
@@ -469,10 +472,6 @@ export default class DrawOperator extends CommToolsData {
           this.gui_states.sphere &&
           !this.nrrd_states.enableCursorChoose
         ) {
-          // let { ctx, canvas } = this.setCurrentLayer();
-          // let mouseX = e.offsetX;
-          // let mouseY = e.offsetY;
-
           // plan B
           // findout all index in the sphere radius range in Axial view
           if (this.nrrd_states.spherePlanB) {
@@ -484,6 +483,12 @@ export default class DrawOperator extends CommToolsData {
               this.drawSphereOnEachViews(i, "z");
             }
           }
+
+          !!this.nrrd_states.getSphere &&
+            this.nrrd_states.getSphere(
+              this.nrrd_states.sphereOrigin.z,
+              this.nrrd_states.sphereRadius
+            );
 
           this.protectedData.canvases.drawingCanvas.removeEventListener(
             "wheel",
@@ -817,9 +822,10 @@ export default class DrawOperator extends CommToolsData {
         moveDistance = 1;
       } else {
         this.resizePaintArea(moveDistance);
-        this.resetPaintArea(l, t);
+        this.resetPaintAreaUIPosition(l, t);
         this.setIsDrawFalse(1000);
       }
+
       this.nrrd_states.sizeFoctor = moveDistance;
     };
     return handleZoomWheelMove;
@@ -959,11 +965,6 @@ export default class DrawOperator extends CommToolsData {
         1,
         Math.min(this.nrrd_states.sphereRadius, 50)
       );
-      console.log(
-        this.nrrd_states.sphereOrigin[this.protectedData.axis][0],
-        this.nrrd_states.sphereOrigin[this.protectedData.axis][1]
-      );
-
       // get mouse position
       const mouseX = this.nrrd_states.sphereOrigin[this.protectedData.axis][0];
       const mouseY = this.nrrd_states.sphereOrigin[this.protectedData.axis][1];
@@ -1052,6 +1053,9 @@ export default class DrawOperator extends CommToolsData {
     });
   }
 
+  /**
+   * Clear mask on current slice canvas
+   */
   clearPaint() {
     this.protectedData.Is_Draw = true;
     this.resetLayerCanvas();

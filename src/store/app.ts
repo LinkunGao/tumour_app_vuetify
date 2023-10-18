@@ -14,19 +14,21 @@ import {
   useNrrdOriginCase,
   useNipplePointsJson,
   useNrrdCaseFiles,
+  useSaveSphere,
 } from "@/plugins/api";
 import {
   INrrdCaseNames,
+  IExportMask,
   ICaseUrls,
   ICaseRegUrls,
   IExportMasks,
   IReplaceMask,
+  ISaveSphere,
   IMaskMesh,
   IRegRquest,
   INipplePoints,
   IRequests,
 } from "@/models/apiTypes";
-
 export const useFileCountStore = defineStore("filesCount", () => {
   const cases = ref<INrrdCaseNames>();
   const getFilesNames = async () => {
@@ -37,7 +39,6 @@ export const useFileCountStore = defineStore("filesCount", () => {
     getFilesNames,
   };
 });
-
 export const useNrrdCaseFileUrlsWithOrderStore = defineStore(
   "getCaseFileUrlOrdered",
   () => {
@@ -51,55 +52,46 @@ export const useNrrdCaseFileUrlsWithOrderStore = defineStore(
     };
   }
 );
-
 export const useNrrdCaseUrlsStore = defineStore("getCaseFiles", () => {
   const caseUrls = ref<ICaseUrls>();
   const getCaseFileUrls = async (name: string) => {
     caseUrls.value = await useNrrdCase(name);
   };
-
   return {
     caseUrls,
     getCaseFileUrls,
   };
 });
-
 export const useRegNrrdUrlsStore = defineStore("getRegNrrdFiles", () => {
   const regUrls = ref<ICaseRegUrls>();
   const getRegNrrdUrls = async (requestInfo: IRegRquest) => {
     regUrls.value = await useNrrdRegisterCase(requestInfo);
   };
-
   return {
     regUrls,
     getRegNrrdUrls,
   };
 });
-
 export const useOriginNrrdUrlsStore = defineStore("getOriginNrrdFiles", () => {
   const originUrls = ref<ICaseRegUrls>();
   const getOriginNrrdUrls = async (name: string) => {
     originUrls.value = await useNrrdOriginCase(name);
   };
-
   return {
     originUrls,
     getOriginNrrdUrls,
   };
 });
-
 export const useInitMarksStore = defineStore("initMasks", () => {
   const success = ref<boolean>(false);
   const sendInitMask = async (body: IExportMasks) => {
     success.value = await useInitMasks(body);
   };
-
   return {
     success,
     sendInitMask,
   };
 });
-
 export const useReplaceMarksStore = defineStore("replaceMask", () => {
   const success = ref<boolean>(false);
   const sendReplaceMask = async (body: IReplaceMask) => {
@@ -110,7 +102,16 @@ export const useReplaceMarksStore = defineStore("replaceMask", () => {
     sendReplaceMask,
   };
 });
-
+export const useSaveSphereStore = defineStore("saveSphere", () => {
+  const success = ref<boolean>(false);
+  const sendSaveSphere = async (body: ISaveSphere) => {
+    success.value = await useSaveSphere(body);
+  };
+  return {
+    success,
+    sendSaveSphere,
+  };
+});
 export const useSaveMasksStore = defineStore("saveMasks", () => {
   const success = ref<boolean>(false);
   const sendSaveMask = async (name: string) => {
@@ -121,7 +122,6 @@ export const useSaveMasksStore = defineStore("saveMasks", () => {
     sendSaveMask,
   };
 });
-
 export const useMaskStore = defineStore("getMasks", () => {
   const maskBackend = ref<string>();
   const getMaskDataBackend = async (name: string) => {
@@ -132,7 +132,6 @@ export const useMaskStore = defineStore("getMasks", () => {
     getMaskDataBackend,
   };
 });
-
 export const useNipplePointsStore = defineStore("getNipplePoints", () => {
   const nipplePoints = ref<INipplePoints | Boolean>();
   const getNipplePoints = async (name: string) => {
@@ -145,7 +144,6 @@ export const useNipplePointsStore = defineStore("getNipplePoints", () => {
     getNipplePoints,
   };
 });
-
 export const useMaskNrrdStore = defineStore("getMaskNrrd", () => {
   const maskNrrd = ref<string>();
   const getMaskNrrd = async (name: string) => {
@@ -156,7 +154,6 @@ export const useMaskNrrdStore = defineStore("getMaskNrrd", () => {
     getMaskNrrd,
   };
 });
-
 export const useMaskMeshObjStore = defineStore("getMaskMesh", () => {
   const maskMeshObj = ref<IMaskMesh>({});
   const getMaskMeshObj = async (name: string) => {
@@ -167,7 +164,6 @@ export const useMaskMeshObjStore = defineStore("getMaskMesh", () => {
     getMaskMeshObj,
   };
 });
-
 export const useClearMaskMeshStore = defineStore("clearMaskMesh", () => {
   const clearMeshResult = ref<string>();
   const clearMaskMeshObj = async (name: string) => {

@@ -26,7 +26,7 @@ import emitter from "@/plugins/bus";
 const debugMode = ref(false);
 
 function toggleDebug(value: any) {
-  emitter.emit("show-intro-panel", value);
+  emitter.emit("show_debug_mode", value);
 }
 </script>
 

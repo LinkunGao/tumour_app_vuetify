@@ -11,6 +11,7 @@ import eraser_8 from "@/assets/eraser/circular-cursor_38.png";
 import eraser_9 from "@/assets/eraser/circular-cursor_43.png";
 import eraser_10 from "@/assets/eraser/circular-cursor_48.png";
 import eraser_11 from "@/assets/eraser/circular-cursor_52.png";
+import cursor_dot from "@/assets/cursor/dot.svg";
 
 type ITemp = {
   name: string;
@@ -56,6 +57,11 @@ export function getEraserUrlsForOffLine() {
     eraser_10,
     eraser_11,
   ];
+  return urls;
+}
+
+export function getCursorUrlsForOffLine() {
+  const urls = [cursor_dot];
   return urls;
 }
 

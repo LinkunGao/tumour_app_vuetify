@@ -72,6 +72,8 @@ type IMaskData = {
 };
 
 interface IProtected {
+  container: HTMLElement;
+  mainAreaContainer: HTMLElement;
   allSlicesArray: Array<ICommXYZ>;
   displaySlices: Array<any>;
   backUpDisplaySlices: Array<any>;
@@ -185,6 +187,7 @@ interface INrrdStates {
     height: number,
     clearAllFlag: boolean
   ) => void;
+  getSphere: (sphereOrigin: number[], sphereRadius: number) => void;
   drawStartPos: ICommXY;
 }
 
@@ -202,6 +205,7 @@ interface IDrawOpts {
     height: number,
     clearAllFlag?: boolean
   ) => void;
+  getSphereData?: (sphereOrigin: number[], sphereRadius: number) => void;
 }
 type UndoLayerType = {
   label1: Array<HTMLImageElement>;
