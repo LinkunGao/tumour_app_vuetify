@@ -1,8 +1,8 @@
 <template>
   <div id="bg_2" ref="bg">
     <div v-show="openLoading" ref="loading_c" class="loading"></div>
-    <div class="value-panel">
-      <div>
+    <v-card class="value-panel mt-1 ml-1" color="right-display-panel">
+      <div color="primary">
         <span>Tumour volume:</span> <span>{{ volume }} cm<sup>3</sup></span>
       </div>
       <div><span>Tumour extent:</span> <span>71 mm</span></div>
@@ -14,7 +14,8 @@
       <div class="nipple">
         <span></span> <span>{{ nippleClock }}</span>
       </div>
-    </div>
+    </v-card>
+    <div></div>
     <div ref="c_gui" id="gui"></div>
     <Drawer
       @on-view-single-click="handleViewSigleClick"
@@ -321,9 +322,7 @@ function initScene(name: string) {
     controls.rotateSpeed = 3.0;
 
     copperScene.loadViewUrl("/nrrd_view.json");
-    emitter.on("resize", () => {
-      console.log();
-
+    emitter.on("resize-left-right-panels", () => {
       setTimeout(() => {
         copperScene?.onWindowResize();
       }, 100);
@@ -660,8 +659,8 @@ const handleViewsDoubleClick = (view: string) => {
   top: 0px;
   width: 200px;
   height: 150px;
-  background-color: rgba(0, 0, 0, 0.7);
-  border: 1px solid black;
+  background-color: rgba(0, 0, 0, 0.2);
+  border: 2px solid rgba(0, 0, 0, 0.7);
   border-radius: 10px;
   padding: 10px 15px;
   font-size: smaller;
@@ -669,6 +668,7 @@ const handleViewsDoubleClick = (view: string) => {
   /* align-items: center; */
   /* justify-content: center; */
 }
+
 .value-panel > div {
   display: flex;
   align-items: center;

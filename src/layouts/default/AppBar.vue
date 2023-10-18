@@ -39,6 +39,7 @@ import { useTheme } from "vuetify";
 
 import NavPanel from "@/components/nav/NavPanel.vue";
 import IntroPanel from "@/components/intro/IntroPanel.vue";
+import emitter from "@/plugins/bus";
 
 const drawer = ref(false);
 
@@ -49,6 +50,8 @@ function toggleTheme(value: any) {
   theme.global.name.value = theme.global.current.value.dark
     ? "lightTheme"
     : "darkTheme";
+
+  emitter.emit("toggleTheme", theme.global.name.value);
 }
 </script>
 <style></style>

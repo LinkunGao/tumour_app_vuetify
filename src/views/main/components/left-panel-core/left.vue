@@ -10,7 +10,11 @@
         @get-load-files-urls="readyToLoad"
       ></Upload>
     </div>
-    <div class="nav_bar_container" ref="nav_bar_container">
+    <div
+      v-show="showNavToolsBar"
+      class="nav_bar_container"
+      ref="nav_bar_container"
+    >
       <NavBar
         :file-num="fileNum"
         :max="max"
@@ -111,6 +115,8 @@ let loadOrigin = false;
 let currentCaseId = "";
 let regCheckboxElement: HTMLInputElement;
 
+let showNavToolsBar = ref(true);
+
 let state = {
   showContrast: false,
   switchCase: "",
@@ -150,9 +156,23 @@ const worker = new Worker(
 const eraserUrls = getEraserUrlsForOffLine();
 const cursorUrls = getCursorUrlsForOffLine();
 
+function controlDarkMode() {}
+
 function onEmitter() {
   emitter.on("show_debug_mode", (flag) => {
     debug_mode.value = flag as boolean;
+  });
+  emitter.on("resize-left-right-panels", (effects) => {
+    if ((effects as any).panel === "left") {
+      if ((effects as any).effectPanelSize < 600) {
+        showNavToolsBar.value = false;
+        return;
+      }
+    }
+    showNavToolsBar.value = true;
+  });
+  emitter.on("toggleTheme", (themeName) => {
+    console.log(themeName);
   });
 }
 

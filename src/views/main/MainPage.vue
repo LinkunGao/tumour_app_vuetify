@@ -27,7 +27,6 @@
 </template>
 
 <script lang="ts" setup>
-import MainArea from "@/views/main/components/MainArea.vue";
 import LeftPanel from "./components/left-panel-core/left.vue";
 import RightPanel from "./components/right-panel-core/right.vue";
 import { ref, onMounted } from "vue";
@@ -78,7 +77,10 @@ function moveSplitLine(e: MouseEvent) {
     // }
     (mainContainer.value as HTMLDivElement).style.gridTemplateColumns =
       percent - 1 + "% 1%" + (100 - percent) + "%";
-    emitter.emit("resize", true);
+    emitter.emit("resize-left-right-panels", {
+      effectPanelSize: left_container.value?.clientWidth,
+      panel: "left",
+    });
   }
 }
 
@@ -89,15 +91,21 @@ function togglePanelActive(panel: string, e: MouseEvent) {
     case "left":
       leftFullScreen.value = !leftFullScreen.value;
       left_container.value?.classList.toggle("panel_active");
-      // emitter.emit("leftFullScreen", leftFullScreen.value);
+      emitter.emit("resize-left-right-panels", {
+        effectPanelSize: left_container.value?.clientWidth,
+        panel: "left",
+      });
 
       break;
     case "right":
       rightFullScreen.value = !rightFullScreen.value;
       right_container.value?.classList.toggle("panel_active");
+      emitter.emit("resize-left-right-panels", {
+        effectPanelSize: right_container.value?.clientWidth,
+        panel: "right",
+      });
       break;
   }
-  emitter.emit("resize", true);
 }
 </script>
 
