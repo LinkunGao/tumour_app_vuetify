@@ -31,7 +31,7 @@ import * as THREE from "three";
 // import createKDTree from "copper3d-tree";
 import * as Copper from "@/ts/index";
 import { getCurrentInstance, onMounted, ref } from "vue";
-import Drawer from "@/components/tools/drawer.vue";
+import Drawer from "@/components/commonBar/drawer.vue";
 import emitter from "@/plugins/bus";
 import { storeToRefs } from "pinia";
 import {

@@ -32,8 +32,8 @@ import { GUI, GUIController } from "dat.gui";
 // import "copper3d/dist/css/style.css";
 import * as Copper from "@/ts/index";
 
-import NavBar from "@/components/tools/NavBar.vue";
-import Upload from "@/components/tools/Upload.vue";
+import NavBar from "@/components/commonBar/NavBar.vue";
+import Upload from "@/components/commonBar/Upload.vue";
 import { onMounted, ref, watchEffect } from "vue";
 import { storeToRefs } from "pinia";
 import {
@@ -847,12 +847,37 @@ function switchRegCheckBoxStatus(
   cursor: no-drop;
   transition: border-color 0.25s;
 }
+
 .copper3d_sliceNumber:hover {
   border-color: #eb4a05;
 }
 .copper3d_sliceNumber:focus,
 .copper3d_sliceNumber:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
+}
+
+.dark .copper3d_sliceNumber {
+  /* position: fixed !important; */
+  position: relative;
+  width: 300px;
+  text-align: center;
+  top: 5% !important;
+  right: 1% !important;
+  left: 0px !important;
+  margin: 0 auto;
+  border: 1px solid rgb(114, 250, 162);
+  border-radius: 10px;
+  padding: 5px;
+  /* color: crimson; */
+  font-size: 0.9em;
+  font-weight: 700;
+  color: rgba(26, 26, 26, 0.965);
+  cursor: no-drop;
+  transition: border-color 0.25s;
+}
+
+.dark .copper3d_sliceNumber:hover {
+  border-color: #05eb5d;
 }
 
 .copper3D_scene_div {
