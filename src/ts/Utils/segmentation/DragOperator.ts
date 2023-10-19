@@ -56,6 +56,7 @@ export class DragOperator {
     gui_states: IGUIStates,
     protectedData: IProtected,
     drawingPrameters: IDrawingEvents,
+
     setSyncsliceNum: () => void,
     setIsDrawFalse: (target: number) => void,
     flipDisplayImageByAxis: () => void,
@@ -96,10 +97,11 @@ export class DragOperator {
     };
   }
 
-  drag(opts?: IDragOpts) {
-    console.log(this.protectedData);
-    console.log(this.protectedData.mainPreSlices);
+  setShowDragNumberDiv(sliceIndexContainer: HTMLDivElement) {
+    this.showDragNumberDiv = sliceIndexContainer;
+  }
 
+  drag(opts?: IDragOpts) {
     this.dragPrameters.h = this.container.offsetHeight;
 
     this.sensitiveArray.reverse();

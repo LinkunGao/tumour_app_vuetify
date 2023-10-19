@@ -88,6 +88,10 @@ export class NrrdTools extends DrawToolCore {
     }
   }
 
+  setDisplaySliceIndexPanel(panel: HTMLDivElement) {
+    this.dragOperator.setShowDragNumberDiv(panel);
+  }
+
   /**
    * Set up GUI for drawing panel
    * @param gui GUI

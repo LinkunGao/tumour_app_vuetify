@@ -9,7 +9,7 @@
     <v-app-bar-nav-icon @click="drawer = !drawer"></v-app-bar-nav-icon>
 
     <v-app-bar-title class="text-deep-orange">
-      <span>Tumour Segmentation APP </span>
+      <span>Tumour Tracking APP </span>
       <span class="text-body-2">v2.3.6</span>
     </v-app-bar-title>
 

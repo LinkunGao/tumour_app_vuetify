@@ -1,8 +1,11 @@
 <template>
   <div style="height: 100vh">
-    <div id="bg" ref="base_container">
+    <div id="bg" ref="base_container" class="darks">
       <div v-show="debug_mode" ref="c_gui" id="gui"></div>
       <div ref="canvas_container" class="canvas_container"></div>
+      <div ref="slice_index_container" class="copper3d_sliceNumber">
+        Tumour Segmentation Panel
+      </div>
 
       <Upload
         :dialog="dialog"
@@ -86,6 +89,7 @@ let base_container = ref<HTMLDivElement>();
 let c_gui = ref<HTMLDivElement>();
 let canvas_container = ref<HTMLDivElement>();
 let nav_bar_container = ref<HTMLDivElement>();
+let slice_index_container = ref<HTMLDivElement>();
 let debug_mode = ref(false);
 
 let scene: Copper.copperScene | undefined;
@@ -156,8 +160,6 @@ const worker = new Worker(
 const eraserUrls = getEraserUrlsForOffLine();
 const cursorUrls = getCursorUrlsForOffLine();
 
-function controlDarkMode() {}
-
 function onEmitter() {
   emitter.on("show_debug_mode", (flag) => {
     debug_mode.value = flag as boolean;
@@ -171,8 +173,8 @@ function onEmitter() {
     }
     showNavToolsBar.value = true;
   });
-  emitter.on("toggleTheme", (themeName) => {
-    console.log(themeName);
+  emitter.on("toggleTheme", () => {
+    base_container.value?.classList.toggle("darks");
   });
 }
 
@@ -194,6 +196,9 @@ onMounted(async () => {
   );
 
   nrrdTools = new Copper.NrrdTools(canvas_container.value as HTMLDivElement);
+  nrrdTools.setDisplaySliceIndexPanel(
+    slice_index_container.value as HTMLDivElement
+  );
   // for offline working
 
   // nrrdTools.setBaseCanvasesSize(1.5);
@@ -447,7 +452,6 @@ watchEffect(() => {
 
       if (firstLoad) {
         nrrdTools.drag({
-          showNumber: true,
           getSliceNum,
         });
         nrrdTools.draw({ getMaskData, getSphereData });
@@ -849,7 +853,6 @@ function switchRegCheckBoxStatus(
 }
 
 .copper3d_sliceNumber {
-  /* position: fixed !important; */
   position: relative;
   width: 300px;
   text-align: center;
@@ -857,10 +860,9 @@ function switchRegCheckBoxStatus(
   right: 1% !important;
   left: 0px !important;
   margin: 0 auto;
-  border: 1px solid salmon;
+  border: 3px solid salmon;
   border-radius: 10px;
   padding: 5px;
-  /* color: crimson; */
   font-size: 0.9em;
   font-weight: 700;
   color: rgba(26, 26, 26, 0.965);
@@ -876,27 +878,12 @@ function switchRegCheckBoxStatus(
   outline: 4px auto -webkit-focus-ring-color;
 }
 
-.dark .copper3d_sliceNumber {
-  /* position: fixed !important; */
-  position: relative;
-  width: 300px;
-  text-align: center;
-  top: 5% !important;
-  right: 1% !important;
-  left: 0px !important;
-  margin: 0 auto;
-  border: 1px solid rgb(114, 250, 162);
-  border-radius: 10px;
-  padding: 5px;
-  /* color: crimson; */
-  font-size: 0.9em;
-  font-weight: 700;
-  color: rgba(26, 26, 26, 0.965);
-  cursor: no-drop;
-  transition: border-color 0.25s;
+.darks .copper3d_sliceNumber {
+  border: 3px solid rgb(114, 250, 162);
+  color: rgba(234, 232, 232, 0.965);
 }
 
-.dark .copper3d_sliceNumber:hover {
+.darks .copper3d_sliceNumber:hover {
   border-color: #05eb5d;
 }
 
