@@ -26,6 +26,7 @@ interface IConfigGUI {
   clearPaint: () => void;
   clearStoreImages: () => void;
   updateSlicesContrast: (value: number, flag: string) => void;
+  setMainAreaSize: (factor: number) => void;
   resetPaintAreaUIPosition: () => void;
   resizePaintArea: (factor: number) => void;
   repraintCurrentContrastSlice: () => void;
@@ -200,9 +201,10 @@ function setupGui(configs: IConfigGUI) {
     .min(1)
     .max(8)
     .onFinishChange((factor) => {
-      configs.resetPaintAreaUIPosition();
-      configs.nrrd_states.sizeFoctor = factor;
-      configs.resizePaintArea(factor);
+      configs.setMainAreaSize(factor);
+      // configs.resetPaintAreaUIPosition();
+      // configs.nrrd_states.sizeFoctor = factor;
+      // configs.resizePaintArea(factor);
     });
 
   advanceFolder

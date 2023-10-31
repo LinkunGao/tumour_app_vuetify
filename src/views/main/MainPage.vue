@@ -45,11 +45,12 @@ let isDragging = false;
 onMounted(() => {
   const initHeight = mainContainer.value?.clientHeight as number;
   const h = ((initHeight - 80 - 100) / initHeight) * 100;
-
+  // set container height
   emitter.emit("containerHight", h);
-  (mainContainer.value as HTMLDivElement).style.height = `${
-    ((initHeight - 80) / initHeight) * 100
-  }vh`;
+  (mainContainer.value as HTMLDivElement).style.height = (
+    splitBar.value as HTMLDivElement
+  ).style.height = `${((initHeight - 80) / initHeight) * 100}vh`;
+
   splitBar.value?.addEventListener("mousedown", function (e) {
     isDragging = true;
     document.addEventListener("mousemove", moveSplitLine);
@@ -121,7 +122,7 @@ function togglePanelActive(panel: string, e: MouseEvent) {
 }
 
 .box {
-  height: 100%;
+  height: 95vh;
 }
 .panel_active {
   width: 100%;

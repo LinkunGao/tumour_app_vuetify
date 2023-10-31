@@ -1,6 +1,6 @@
 <template>
-  <div style="height: 100vh">
-    <div id="bg" ref="base_container" class="darks">
+  <div>
+    <div id="bg" ref="base_container" class="dark">
       <div v-show="debug_mode" ref="c_gui" id="gui"></div>
       <div ref="canvas_container" class="canvas_container"></div>
       <div ref="slice_index_container" class="copper3d_sliceNumber">
@@ -76,6 +76,7 @@ import {
   getCursorUrlsForOffLine,
 } from "@/views/main/components/tools";
 import emitter from "@/plugins/bus";
+import { convertInitMaskData } from "@/plugins/worker";
 
 let appRenderer: Copper.copperRenderer;
 let max = ref(0);
@@ -149,13 +150,6 @@ const { clearMaskMeshObj } = useClearMaskMeshStore();
 const { getNrrdAndJsonFileUrls } = useNrrdCaseFileUrlsWithOrderStore();
 const { caseUrls } = storeToRefs(useNrrdCaseFileUrlsWithOrderStore());
 let originUrls = ref<ICaseUrls>({ nrrdUrls: [], jsonUrl: "" });
-// web worker for send masks to backend
-const worker = new Worker(
-  new URL("../../../utils/worker.ts", import.meta.url),
-  {
-    type: "module",
-  }
-);
 
 const eraserUrls = getEraserUrlsForOffLine();
 const cursorUrls = getCursorUrlsForOffLine();
@@ -174,16 +168,33 @@ function onEmitter() {
     showNavToolsBar.value = true;
   });
   emitter.on("toggleTheme", () => {
-    base_container.value?.classList.toggle("darks");
+    base_container.value?.classList.toggle("dark");
+  });
+  emitter.on("leftFullScreen", (flag) => {
+    if (flag) {
+      (nav_bar_container.value as HTMLDivElement).style.width = "90%";
+    } else {
+      (nav_bar_container.value as HTMLDivElement).style.width = "60%";
+    }
+  });
+  emitter.on("containerHight", (h) => {
+    (base_container.value as HTMLDivElement).style.height = `${h}vh`;
+    // (nav_bar_container.value as HTMLDivElement).style.height = `${60}px`;
   });
 }
 
 onMounted(async () => {
   onEmitter();
-  emitter.on("containerHight", (h) => {
-    (base_container.value as HTMLDivElement).style.height = `${h}vh`;
-    // (nav_bar_container.value as HTMLDivElement).style.height = `${60}px`;
+
+  window.addEventListener("resize", () => {
+    console.log("resize");
+    var screenWidth = window.screen.width;
+    var screenHeight = window.screen.height;
+
+    console.log("屏幕宽度：" + screenWidth);
+    console.log("屏幕高度：" + screenHeight);
   });
+
   await getInitData();
   c_gui.value?.appendChild(gui.domElement);
 
@@ -204,6 +215,7 @@ onMounted(async () => {
   // nrrdTools.setBaseCanvasesSize(1.5);
   nrrdTools.setEraserUrls(eraserUrls);
   nrrdTools.setPencilIconUrls(cursorUrls);
+  // nrrdTools.setMainAreaSize(3);
 
   // sphere plan b
   toolsState = nrrdTools.getNrrdToolsSettings();
@@ -227,14 +239,6 @@ onMounted(async () => {
   setupGui();
   loadModel("nrrd_tools");
   appRenderer.animate();
-
-  emitter.on("leftFullScreen", (flag) => {
-    if (flag) {
-      (nav_bar_container.value as HTMLDivElement).style.width = "90%";
-    } else {
-      (nav_bar_container.value as HTMLDivElement).style.width = "60%";
-    }
-  });
 });
 
 async function getInitData() {
@@ -284,21 +288,7 @@ const resetMainAreaSize = (factor: number) => {
   nrrdTools.setMainAreaSize(factor);
 };
 
-worker.onmessage = async function (ev: MessageEvent) {
-  const result = ev.data;
-  const body = {
-    caseId: currentCaseId,
-    masks: result.masks as IStoredMasks,
-  };
-  let start_c: unknown = new Date();
-  await sendInitMask(body);
-  let end_c: unknown = new Date();
-  let timeDiff_c = (end_c as number) - (start_c as number);
-  console.log(`axios send Time taken: ${timeDiff_c}ms`);
-  console.log("send");
-};
-
-const sendInitMaskToBackend = () => {
+const sendInitMaskToBackend = async () => {
   // const masksData = nrrdTools.paintImages.z;
   const rawMaskData = nrrdTools.getMaskData();
   const masksData = {
@@ -312,9 +302,8 @@ const sendInitMaskToBackend = () => {
   const height = dimensions[1];
   const voxelSpacing = nrrdTools.getVoxelSpacing();
   const spaceOrigin = nrrdTools.getSpaceOrigin();
-
   if (len > 0) {
-    worker.postMessage({
+    const result = convertInitMaskData({
       masksData,
       len,
       width,
@@ -323,6 +312,16 @@ const sendInitMaskToBackend = () => {
       spaceOrigin,
       msg: "init",
     });
+    const body = {
+      caseId: currentCaseId,
+      masks: result.masks as IStoredMasks,
+    };
+    let start_c: unknown = new Date();
+    await sendInitMask(body);
+    let end_c: unknown = new Date();
+    let timeDiff_c = (end_c as number) - (start_c as number);
+    console.log(`axios send Time taken: ${timeDiff_c}ms`);
+    console.log("send");
   }
 };
 
@@ -878,13 +877,13 @@ function switchRegCheckBoxStatus(
   outline: 4px auto -webkit-focus-ring-color;
 }
 
-.darks .copper3d_sliceNumber {
-  border: 3px solid rgb(114, 250, 162);
-  color: rgba(234, 232, 232, 0.965);
+.dark .copper3d_sliceNumber {
+  border: 3px solid #009688;
+  color: #fff8ec;
 }
 
-.darks .copper3d_sliceNumber:hover {
-  border-color: #05eb5d;
+.dark .copper3d_sliceNumber:hover {
+  border-color: #4db6ac;
 }
 
 .copper3D_scene_div {

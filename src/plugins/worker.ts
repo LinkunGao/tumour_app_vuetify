@@ -1,10 +1,6 @@
 import * as Copper from "copper3d";
 
-addEventListener("message", (event) => {
-  const data = event.data;
-
-  // 在 Worker 中执行计算量大的代码
-
+export function convertInitMaskData(data: any) {
   let masks: any = {};
 
   for (let i = 1; i < 4; i++) {
@@ -30,9 +26,43 @@ addEventListener("message", (event) => {
     width,
     height,
   };
-  // 发送计算结果到主线程
-  postMessage(result);
-});
+
+  return result;
+}
+
+// addEventListener("message", (event) => {
+//   const data = event.data;
+
+//   console.log("worker",data);
+
+//   let masks: any = {};
+
+//   for (let i = 1; i < 4; i++) {
+//     const labelMask = restructData(
+//       data.masksData[`label${i}`],
+//       data.len,
+//       data.width,
+//       data.height,
+//       data.voxelSpacing,
+//       data.spaceOrigin,
+//       data.msg
+//     );
+//     masks[`label${i}`] = labelMask;
+//   }
+//   masks["hasData"] = false;
+//   masks["volume"] = 0;
+//   const len = data.len;
+//   const width = data.width;
+//   const height = data.height;
+//   const result = {
+//     masks,
+//     len,
+//     width,
+//     height,
+//   };
+
+//   postMessage(result);
+// });
 
 function deepCopy(obj: any): unknown {
   if (obj === null || typeof obj !== "object") {

@@ -10,7 +10,7 @@
 
     <v-app-bar-title class="text-deep-orange">
       <span>Tumour Tracking APP </span>
-      <span class="text-body-2">v2.3.6</span>
+      <span class="text-body-2">v3.0.0</span>
     </v-app-bar-title>
 
     <div width="" class="w-50 d-flex flex-row justify-end align-center px-2">

@@ -115,6 +115,7 @@ export class NrrdTools extends DrawToolCore {
       clearPaint: this.clearPaint,
       clearStoreImages: this.clearStoreImages,
       updateSlicesContrast: this.updateSlicesContrast,
+      setMainAreaSize: this.setMainAreaSize,
       resetPaintAreaUIPosition: this.resetPaintAreaUIPosition,
       resizePaintArea: this.resizePaintArea,
       repraintCurrentContrastSlice: this.repraintCurrentContrastSlice,
@@ -720,7 +721,7 @@ export class NrrdTools extends DrawToolCore {
   }
 
   setMainAreaSize(factor: number) {
-    this.nrrd_states.sizeFoctor += factor;
+    this.nrrd_states.sizeFoctor = factor;
 
     if (this.nrrd_states.sizeFoctor >= 8) {
       this.nrrd_states.sizeFoctor = 8;
@@ -729,7 +730,7 @@ export class NrrdTools extends DrawToolCore {
     }
     this.resizePaintArea(this.nrrd_states.sizeFoctor);
     this.resetPaintAreaUIPosition();
-    this.setIsDrawFalse(1000);
+    // this.setIsDrawFalse(1000);
   }
 
   getContainer() {
@@ -1020,6 +1021,7 @@ export class NrrdTools extends DrawToolCore {
     /**
      * clear canvas
      */
+
     this.protectedData.canvases.originCanvas.width =
       this.protectedData.canvases.originCanvas.width;
     this.protectedData.canvases.displayCanvas.width =

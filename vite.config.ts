@@ -11,7 +11,12 @@ import { fileURLToPath, URL } from "node:url";
 export default defineConfig({
   plugins: [
     vue({
-      template: { transformAssetUrls },
+      template: {
+        transformAssetUrls,
+        compilerOptions: {
+          isCustomElement: (tag) => tag.startsWith("ion-"),
+        },
+      },
     }),
     // https://github.com/vuetifyjs/vuetify-loader/tree/next/packages/vite-plugin
     vuetify({

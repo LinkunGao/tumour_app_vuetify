@@ -1,5 +1,5 @@
 <template>
-  <div class="nav">
+  <div class="nav dark" ref="nav_container">
     <div class="content" id="left_nav_bar">
       <el-slider
         v-model="sliceNum"
@@ -10,34 +10,22 @@
         id="left_nav_slider"
       />
       <div class="arrows">
-        <!-- <span @click="onMagnificationClick(0.2)"
-          ><img class="image" src="../assets/images/zoom-in.ico" alt=""
-        /></span>
-        <span @click="onMagnificationClick(-0.2)"
-          ><img class="image" src="../assets/images/zoom-out.ico" alt=""
-        /></span> -->
         <span @click="onSwitchSliceOrientation('x')">
-          <!-- <img
-            class="image"
-            src="../assets/images/person_left_view.png"
-            alt=""
-        /> -->
           <i class="switch_font">Sagittal</i>
         </span>
         <span @click="onSwitchSliceOrientation('z')">
-          <!-- <img class="image" src="../assets/images/person_anterior.png" alt=""/> -->
           <i class="switch_font">Axial</i>
         </span>
         <span @click="onSwitchSliceOrientation('y')">
-          <!-- <img class="image" src="../assets/images/person_top_down.png" alt=""/> -->
           <i class="switch_font">Coronal</i>
         </span>
         <span class="save" @click="onSave()">
           <div>
-            <ion-icon name="save-outline"></ion-icon>
+            <!-- <ion-icon name="save-outline"></ion-icon> -->
+            <ion-icon name="sync-outline"></ion-icon>
           </div>
           <div>
-            <i>save</i>
+            <i>sync</i>
           </div>
         </span>
         <span @click="openDialog">
@@ -49,7 +37,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, toRefs, watchEffect } from "vue";
+import { ref, reactive, toRefs, watchEffect, onMounted } from "vue";
+import emitter from "@/plugins/bus";
 type Props = {
   fileNum: number;
   min?: number;
@@ -60,6 +49,13 @@ type Props = {
   contrastIndex?: number;
   isAxisClicked?: boolean;
 };
+const nav_container = ref<HTMLDivElement>();
+
+onMounted(() => {
+  emitter.on("toggleTheme", () => {
+    nav_container.value?.classList.toggle("dark");
+  });
+});
 let p = withDefaults(defineProps<Props>(), {
   min: 0,
   max: 160,
@@ -157,11 +153,13 @@ watchEffect(() => {
 </script>
 
 <style scoped>
-.el-slider {
+.dark .el-slider {
   max-width: 35vw;
   margin-right: 10px;
-  --el-slider__bar-bg-color: red !important;
+  --el-slider-main-bg-color: #f4511e !important;
+  --el-slider-runway-bg-color: rgba(0, 0, 0) !important;
 }
+
 .nav {
   /* position: fixed;
   bottom: 25px;
@@ -182,7 +180,8 @@ watchEffect(() => {
   /* position: relative; */
   width: 100%;
   height: 100%;
-  background-color: #edf1f4;
+  /* background-color: #edf1f4; */
+  background-color: #f4f4f4;
   padding: 0 20px;
   border-radius: 10px;
   box-shadow: 0 30px 30px rgba(0, 0, 0, 0.05);
@@ -190,6 +189,13 @@ watchEffect(() => {
   align-items: center;
   justify-content: center;
 }
+
+.dark .content {
+  background: #33393e;
+  box-shadow: 15px 15px 20px rgba(0, 0, 0, 0.25),
+    -15px -15px 20px rgba(255, 255, 255, 0.1);
+}
+
 .nav .content .arrows {
   display: flex;
   align-items: center;
@@ -212,10 +218,23 @@ watchEffect(() => {
   border-radius: 10px;
   cursor: pointer;
 }
+.dark .content .arrows span {
+  color: #eee;
+  border: 2px solid #333;
+  box-shadow: 5px 5px 10px rgba(0, 0, 0, 0.25),
+    -5px -5px 10px rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
 .nav .content .arrows span:active {
   box-shadow: inset 5px 5px 10px rgba(0, 0, 0, 0.1), inset -5px -5px 10px #fff;
   color: #f44336;
 }
+
+.dark .content .arrows span:active {
+  box-shadow: inset 5px 5px 10px rgba(0, 0, 0, 0.25),
+    inset -5px -5px 10px rgba(255, 255, 255, 0.1);
+}
+
 .image {
   width: 1em;
   height: 1em;
@@ -236,7 +255,7 @@ watchEffect(() => {
 }
 .save div {
   padding: -10px 0;
-  margin: -6px 0;
+  margin: -10px 0;
 }
 .save i {
   font-size: 0.5em;
