@@ -52,6 +52,7 @@ import {
   getClosestNipple,
 } from "@/views/main/components/tools";
 import { PanelOperationManager, valideClock, deepClone } from "./utils-right";
+import loadingGif from "@/assets/loading.svg";
 
 let refs = null;
 let bg = ref<HTMLDivElement>();
@@ -118,7 +119,7 @@ onMounted(() => {
   // bg = refs.base_container_2;
   c_gui = refs.c_gui;
 
-  loadBarMain = Copper.loading();
+  loadBarMain = Copper.loading(loadingGif);
 
   loadingContainer = loadBarMain.loadingContainer;
   (loading_c.value as HTMLDivElement).appendChild(loadingContainer);
@@ -159,7 +160,7 @@ onMounted(() => {
   });
   panelOperator = new PanelOperationManager(bg.value as HTMLDivElement);
 
-  loadBar1 = Copper.loading();
+  loadBar1 = Copper.loading(loadingGif);
 
   // appRenderer.container.appendChild(loadBar1.loadingContainer);
 

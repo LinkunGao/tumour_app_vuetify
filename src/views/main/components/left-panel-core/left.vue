@@ -38,6 +38,7 @@ import { GUI, GUIController } from "dat.gui";
 // import * as Copper from "copper3d";
 // import "copper3d/dist/css/style.css";
 import * as Copper from "@/ts/index";
+import loadingGif from "@/assets/loading.svg";
 
 import NavBar from "@/components/commonBar/NavBar.vue";
 import Upload from "@/components/commonBar/Upload.vue";
@@ -54,7 +55,7 @@ import {
   ICaseUrls,
   IDetails,
 } from "@/models/apiTypes";
-import { addNameToLoadedMeshes } from "./utils-left";
+import { addNameToLoadedMeshes, findRequestUrls } from "./utils-left";
 import {
   useFileCountStore,
   useNrrdCaseUrlsStore,
@@ -186,15 +187,6 @@ function onEmitter() {
 onMounted(async () => {
   onEmitter();
 
-  window.addEventListener("resize", () => {
-    console.log("resize");
-    var screenWidth = window.screen.width;
-    var screenHeight = window.screen.height;
-
-    console.log("屏幕宽度：" + screenWidth);
-    console.log("屏幕高度：" + screenHeight);
-  });
-
   await getInitData();
   c_gui.value?.appendChild(gui.domElement);
 
@@ -221,7 +213,7 @@ onMounted(async () => {
   toolsState = nrrdTools.getNrrdToolsSettings();
   // toolsState.spherePlanB = false;
 
-  loadBarMain = Copper.loading();
+  loadBarMain = Copper.loading(loadingGif);
 
   loadingContainer = loadBarMain.loadingContainer;
   progress = loadBarMain.progress;
@@ -237,7 +229,7 @@ onMounted(async () => {
   });
 
   setupGui();
-  loadModel("nrrd_tools");
+  setupCopperScene("nrrd_tools");
   appRenderer.animate();
 });
 
@@ -511,7 +503,7 @@ watchEffect(() => {
   }
 });
 
-async function loadModel(name: string) {
+async function setupCopperScene(name: string) {
   scene = appRenderer.getSceneByName(name) as Copper.copperScene;
   if (scene == undefined) {
     scene = appRenderer.createScene(name) as Copper.copperScene;
@@ -519,73 +511,35 @@ async function loadModel(name: string) {
       appRenderer.setCurrentScene(scene);
     }
 
-    if ((cases.value?.names as string[]).length > 0) {
-      if (cases.value?.names) {
-        switchAnimationStatus("flex", "Prepare Nrrd files, please wait......");
-        currentCaseId = cases.value?.names[0];
-        const details = cases.value?.details;
+    // if ((cases.value?.names as string[]).length > 0) {
+    //   if (cases.value?.names) {
+    //     switchAnimationStatus("flex", "Prepare Nrrd files, please wait......");
+    //     currentCaseId = cases.value?.names[0];
+    //     const details = cases.value?.details;
 
-        const requests = findRequestUrls(
-          details,
-          currentCaseId,
-          "registration"
-        );
+    //     const requests = findRequestUrls(
+    //       details,
+    //       currentCaseId,
+    //       "registration"
+    //     );
 
-        await getNrrdAndJsonFileUrls(requests);
+    //     await getNrrdAndJsonFileUrls(requests);
 
-        if (caseUrls.value) {
-          urls = caseUrls.value.nrrdUrls;
-          // every time switch cases, we store it
-          loadedUrls[currentCaseId] = caseUrls.value;
-          emitter.emit("casename", {
-            currentCaseId,
-            details,
-            maskNrrd: urls[1],
-          });
-        }
-        loadAllNrrds(urls, "registration");
-      }
-    }
+    //     if (caseUrls.value) {
+    //       urls = caseUrls.value.nrrdUrls;
+    //       // every time switch cases, we store it
+    //       loadedUrls[currentCaseId] = caseUrls.value;
+    //       emitter.emit("casename", {
+    //         currentCaseId,
+    //         details,
+    //         maskNrrd: urls[1],
+    //       });
+    //     }
+    //     loadAllNrrds(urls, "registration");
+    //   }
+    // }
   }
 }
-
-const findRequestUrls = (
-  details: Array<IDetails>,
-  caseId: string,
-  type: "registration" | "origin"
-) => {
-  const currentCaseDetails = details.filter((item) => item.name === caseId)[0];
-  const requests: Array<IRequests> = [];
-  if (type === "registration") {
-    currentCaseDetails.file_paths.registration_nrrd_paths.forEach(
-      (filepath) => {
-        requests.push({
-          url: "/single-file",
-          params: { path: filepath },
-        });
-      }
-    );
-  } else if (type === "origin") {
-    currentCaseDetails.file_paths.origin_nrrd_paths.forEach((filepath) => {
-      requests.push({
-        url: "/single-file",
-        params: { path: filepath },
-      });
-    });
-  }
-
-  if (currentCaseDetails.masked) {
-    currentCaseDetails.file_paths.segmentation_manual_mask_paths.forEach(
-      (filepath) => {
-        requests.push({
-          url: "/single-file",
-          params: { path: filepath },
-        });
-      }
-    );
-  }
-  return requests;
-};
 
 const loadAllNrrds = (
   urls: Array<string>,

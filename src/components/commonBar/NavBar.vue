@@ -166,7 +166,7 @@ watchEffect(() => {
   left: 10px; */
 
   height: 60px;
-  width: 90%;
+  width: 85%;
   display: flex;
   justify-content: center;
   align-items: center;
