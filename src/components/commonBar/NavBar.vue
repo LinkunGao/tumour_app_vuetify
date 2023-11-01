@@ -192,8 +192,10 @@ watchEffect(() => {
 
 .dark .content {
   background: #33393e;
+  /* box-shadow: 15px 15px 20px rgba(0, 0, 0, 0.25),
+    -15px -15px 20px rgba(255, 255, 255, 0.1); */
   box-shadow: 15px 15px 20px rgba(0, 0, 0, 0.25),
-    -15px -15px 20px rgba(255, 255, 255, 0.1);
+    -5px -10px 15px rgba(255, 255, 255, 0.1);
 }
 
 .nav .content .arrows {

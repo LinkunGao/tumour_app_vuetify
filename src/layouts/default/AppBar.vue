@@ -1,12 +1,18 @@
 <template>
-  <v-navigation-drawer v-model="drawer">
-    <!--  -->
+  <v-navigation-drawer
+    v-model="drawer"
+    :rounded="true"
+    :disable-resize-watcher="true"
+    :temporary="true"
+    :width="350"
+  >
+    <!--     :theme="drawerTheme" -->
 
     <NavPanel />
   </v-navigation-drawer>
 
   <v-app-bar color="surface" class="d-flex justify-end">
-    <v-app-bar-nav-icon @click="drawer = !drawer"></v-app-bar-nav-icon>
+    <v-app-bar-nav-icon @click="toggleDrawer"></v-app-bar-nav-icon>
 
     <v-app-bar-title class="text-deep-orange">
       <span>Tumour Tracking APP </span>
@@ -41,15 +47,26 @@ import NavPanel from "@/components/nav/NavPanel.vue";
 import IntroPanel from "@/components/intro/IntroPanel.vue";
 import emitter from "@/plugins/bus";
 
+const drawerTheme = ref("dark");
+
 const drawer = ref(false);
 
 const theme = useTheme();
+
+function toggleDrawer() {
+  drawer.value = !drawer.value;
+  emitter.emit("resize-left-right-panels", {
+    panel: "right",
+  });
+}
 
 function toggleTheme(value: any) {
   // theme.global.current.value.dark
   theme.global.name.value = theme.global.current.value.dark
     ? "lightTheme"
     : "darkTheme";
+
+  drawerTheme.value = theme.global.current.value.dark ? "dark" : "light";
 
   emitter.emit("toggleTheme", theme.global.name.value);
 }

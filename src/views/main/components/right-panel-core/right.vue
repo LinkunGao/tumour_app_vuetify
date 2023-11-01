@@ -1,6 +1,8 @@
 <template>
   <div id="bg_2" ref="bg">
-    <div v-show="openLoading" ref="loading_c" class="loading"></div>
+    <div v-show="openLoading" ref="loading_c" class="loading">
+      <div class="loading_text text-cyan-darken-3">Load tumour model...</div>
+    </div>
     <v-card class="value-panel mt-1 ml-1" color="right-display-panel">
       <div color="primary">
         <span>Tumour volume:</span> <span>{{ volume }} cm<sup>3</sup></span>
@@ -111,9 +113,7 @@ const { nipplePoints } = storeToRefs(useNipplePointsStore());
 const { getNipplePoints } = useNipplePointsStore();
 
 onMounted(() => {
-  emitter.on("containerHight", (h) => {
-    (bg.value as HTMLDivElement).style.height = `${h}vh`;
-  });
+  onEmitter();
   let { $refs } = (getCurrentInstance() as any).proxy;
   refs = $refs;
   // bg = refs.base_container_2;
@@ -166,6 +166,13 @@ onMounted(() => {
 
   initScene("display_nrrd");
 
+  appRenderer.animate();
+});
+
+function onEmitter() {
+  emitter.on("containerHight", (h) => {
+    (bg.value as HTMLDivElement).style.height = `${h}vh`;
+  });
   emitter.on("saveMesh", () => {
     loadingContainer.style.display = "flex";
     openLoading.value = true;
@@ -283,8 +290,13 @@ onMounted(() => {
     // console.timeEnd()
     // resetSliceIndex(updateIndex)
   });
-  appRenderer.animate();
-});
+
+  emitter.on("resize-left-right-panels", () => {
+    setTimeout(() => {
+      copperScene?.onWindowResize();
+    }, 100);
+  });
+}
 
 // async function getMaskNrrdHandle() {
 //   if (casename) {
@@ -323,11 +335,7 @@ function initScene(name: string) {
     controls.rotateSpeed = 3.0;
 
     copperScene.loadViewUrl("/nrrd_view.json");
-    emitter.on("resize-left-right-panels", () => {
-      setTimeout(() => {
-        copperScene?.onWindowResize();
-      }, 100);
-    });
+
     // copperScene.updateBackground("#8b6d96", "#18e5e5");
     // Copper.setHDRFilePath("venice_sunset_1k.hdr");
     // appRenderer.updateEnvironment();
@@ -630,7 +638,7 @@ const handleViewsDoubleClick = (view: string) => {
 
 <style scoped>
 #bg_2 {
-  width: 100%;
+  width: 95%;
   height: 100%;
   position: relative;
   display: flex;
@@ -651,8 +659,12 @@ const handleViewsDoubleClick = (view: string) => {
   width: 100%;
   height: 100%;
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
+}
+.loading_text {
+  order: 3;
 }
 .value-panel {
   position: absolute;

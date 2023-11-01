@@ -17,7 +17,7 @@
 
     <div
       v-show="!leftFullScreen"
-      class="box bg-surface mr-1 my-1 mt-2 rounded"
+      class="box box_right bg-surface mr-1 my-1 mt-2 rounded"
       ref="right_container"
       @dblclick.stop="togglePanelActive('right', $event)"
     >
@@ -43,13 +43,13 @@ const ignoreElements = ["INPUT", "I", "svg", "path"];
 
 let isDragging = false;
 onMounted(() => {
-  const initHeight = mainContainer.value?.clientHeight as number;
-  const h = ((initHeight - 80 - 100) / initHeight) * 100;
-  // set container height
-  emitter.emit("containerHight", h);
-  (mainContainer.value as HTMLDivElement).style.height = (
-    splitBar.value as HTMLDivElement
-  ).style.height = `${((initHeight - 80) / initHeight) * 100}vh`;
+  // const initHeight = mainContainer.value?.clientHeight as number;
+  // const h = ((initHeight - 60 - 100) / initHeight) * 100;
+  // // set container height
+  // emitter.emit("containerHight", h);
+  // (mainContainer.value as HTMLDivElement).style.height = (
+  //   splitBar.value as HTMLDivElement
+  // ).style.height = `${((initHeight - 80) / initHeight) * 100}vh`;
 
   splitBar.value?.addEventListener("mousedown", function (e) {
     isDragging = true;
@@ -122,7 +122,14 @@ function togglePanelActive(panel: string, e: MouseEvent) {
 }
 
 .box {
-  height: 95vh;
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 80px);
+}
+.box_right {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .panel_active {
   width: 100%;

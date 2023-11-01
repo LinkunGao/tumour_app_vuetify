@@ -29,6 +29,7 @@ const lightTheme: ThemeDefinition = {
     "segement-panel": "#FFF8E1",
     "three-d-panel": "#FFF8E1",
     "split-line": "#FF8F00",
+    switcher: "#FF5722",
   },
 };
 
@@ -48,6 +49,7 @@ const darkTheme: ThemeDefinition = {
     "segement-panel": "#F4511E",
     "three-d-panel": "#43A047",
     "split-line": "#009688",
+    switcher: "#FF5722",
   },
 };
 

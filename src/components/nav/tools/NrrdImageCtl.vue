@@ -9,210 +9,147 @@
       ></v-list-item>
     </template>
 
-    <v-select :items="cases?.names" density="compact" label="Cases"></v-select>
     <v-select
-      v-model="contrastValue"
-      :items="contrast"
+      :items="cases?.names"
+      density="compact"
+      label="Cases"
+      :disabled="disableSelectCase"
+      @update:modelValue="onCaseSwitched"
+    ></v-select>
+    <v-select
+      v-model="slectedContrast"
+      :items="contrastValue"
+      :disabled="disableSelectContrast"
       chips
       label="Contrast Select"
       multiple
+      @update:modelValue="onContrastSelected"
     ></v-select>
+
+    <Switcher
+      v-model:controller="switchRegisted"
+      :title="switchTitle"
+      :disabled="switchDisabled"
+      :label="switchLable"
+      :loading="switchLoading"
+      @toggleUpdate="toggleRegisterChanged"
+    />
   </v-list-group>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import Switcher from "@/components/commonBar/Switcher.vue";
+import { ref, onMounted, Ref } from "vue";
 import { useFileCountStore } from "@/store/app";
 import { storeToRefs } from "pinia";
+import emitter from "@/plugins/bus";
+
+type selecedType = {
+  [key: string]: boolean;
+};
+type resultType = {
+  [key: string]: any;
+};
+
 const { cases } = storeToRefs(useFileCountStore());
 const { getFilesNames } = useFileCountStore();
-const contrastValue = ref([
-  "Contrast Pre",
-  "Contrast 1",
-  "Contrast 2",
-  "Contrast 3",
-  "Contrast 4",
-  "Contrast 5",
-]);
-const contrast = ref([
-  "Contrast Pre",
-  "Contrast 1",
-  "Contrast 2",
-  "Contrast 3",
-  "Contrast 4",
-  "Contrast 5",
-]);
+const disableSelectCase = ref(false);
+const disableSelectContrast = ref(true);
+const contrastValue = ref<string[]>([]);
+const slectedContrast = ref<string[]>([]);
+const contrastOrder: any = {
+  pre: 0,
+  contrast1: 1,
+  contrast2: 2,
+  contrast3: 3,
+  contrast4: 4,
+};
+const switchRegisted = ref<boolean>(true);
+const switchTitle = ref<string>("Register Images");
+const switchLoading = ref<boolean | string>(false);
+const switchDisabled = ref<boolean>(true);
+const switchLable = ref<"on" | "off">("on");
 
-onMounted(async () => {});
+let contrastState: selecedType;
+
+onMounted(() => {
+  manageEmitters();
+});
+
+function manageEmitters() {
+  emitter.on("finishloadcases", () => {
+    disableSelectCase.value = false;
+    switchDisabled.value = false;
+    switchLoading.value = false;
+  });
+  emitter.on("setcontrastnames", (contrastStates) => {
+    slectedContrast.value = [];
+    contrastState = contrastStates as selecedType;
+    contrastValue.value = Object.keys(contrastState);
+    for (const key in contrastState) {
+      if (contrastState.hasOwnProperty(key)) {
+        if (contrastState[key]) {
+          slectedContrast.value.push(key);
+        }
+      }
+    }
+    disableSelectContrast.value = false;
+  });
+}
+
+function onCaseSwitched(casename: any) {
+  disableSelectCase.value = true;
+  disableSelectContrast.value = true;
+  switchDisabled.value = true;
+  switchLable.value = "on";
+  switchRegisted.value = true;
+  switchLoading.value = "warning";
+  emitter.emit("caseswitched", casename);
+}
+
+function onContrastSelected(contrasts: string[]) {
+  let result: resultType = {};
+  sort(slectedContrast.value);
+  for (const key in contrastState) {
+    if (contrastState.hasOwnProperty(key)) {
+      if (contrasts.includes(key)) {
+        if (!contrastState[key]) {
+          // add a contrast, set its state to ture
+          contrastState[key] = true;
+          result["effect"] = key;
+          result["order"] = contrastOrder[key];
+          result["contrastState"] = true;
+          emitter.emit("contrastselected", result);
+        }
+      } else {
+        if (contrastState[key]) {
+          // remove a contrast, set its state to ture
+          contrastState[key] = false;
+          result["effect"] = key;
+          result["order"] = contrastOrder[key];
+          result["contrastState"] = false;
+          emitter.emit("contrastselected", result);
+        }
+      }
+    }
+  }
+}
+
+function toggleRegisterChanged(value: boolean) {
+  switchLable.value = switchLable.value === "on" ? "off" : "on";
+  switchDisabled.value = true;
+  switchLoading.value = "warning";
+  emitter.emit("registerimagechanged", value);
+}
+
+const sort = (arr: string[]) => {
+  arr.sort((a, b) => {
+    return contrastOrder[a] - contrastOrder[b];
+  });
+};
 
 async function getInitData() {
   await getFilesNames();
-}
-function setupGui() {
-  state.switchCase = cases.value?.names[0] as string;
-
-  gui
-    .add(state, "switchCase", cases.value?.names as string[])
-    .onChange(async (caseId) => {
-      switchAnimationStatus("flex", "Saving masks data, please wait......");
-      // revoke the regsiter images
-      if (!!originUrls.value && originUrls.value.nrrdUrls.length > 0) {
-        revokeRegisterNrrdImages(originUrls.value.nrrdUrls);
-        originUrls.value.nrrdUrls.length = 0;
-      }
-      originAllSlices.length = 0;
-      defaultRegAllSlices.length = 0;
-      originAllMeshes.length = 0;
-      defaultRegAllMeshes.length = 0;
-      // temprary disable this function
-      revokeAppUrls(loadedUrls);
-      loadedUrls = {};
-
-      currentCaseId = caseId;
-      await getInitData();
-
-      if (loadedUrls[caseId]) {
-        switchAnimationStatus(
-          "flex",
-          "Prepare and Loading masks data, please wait......"
-        );
-        URL.revokeObjectURL(loadedUrls[caseId].jsonUrl);
-        await getMaskDataBackend(caseId);
-        loadedUrls[caseId].jsonUrl = maskBackend.value;
-        urls = loadedUrls[caseId].nrrdUrls;
-        if (!!caseUrls.value) {
-          caseUrls.value.nrrdUrls = urls;
-        }
-      } else {
-        switchAnimationStatus("flex", "Prepare Nrrd files, please wait......");
-        // await getCaseFileUrls(value);
-
-        const requests = findRequestUrls(
-          cases.value?.details as Array<IDetails>,
-          currentCaseId,
-          "registration"
-        );
-        await getNrrdAndJsonFileUrls(requests);
-
-        if (!!caseUrls.value) {
-          urls = caseUrls.value.nrrdUrls;
-          loadedUrls[currentCaseId] = caseUrls.value;
-          const details = cases.value?.details;
-          emitter.emit("casename", {
-            currentCaseId,
-            details,
-            maskNrrd: urls[1],
-          });
-        }
-      }
-
-      readyToLoad(urls, "registration");
-      loadCases = true;
-      setUpGuiAfterLoading();
-    });
-
-  selectedContrastFolder = gui.addFolder("select display contrast");
-}
-
-function setUpGuiAfterLoading() {
-  if (!!optsGui) {
-    gui.removeFolder(optsGui);
-    optsGui = undefined;
-    state.showRegisterImages = true;
-  }
-  optsGui = gui.addFolder("opts");
-  regCkeckbox = optsGui.add(state, "showRegisterImages");
-  regCheckboxElement = regCkeckbox.domElement.childNodes[0] as HTMLInputElement;
-  regCkeckbox.onChange(async () => {
-    if (regCheckboxElement.disabled) {
-      state.showRegisterImages = !state.showRegisterImages;
-      return;
-    }
-
-    switchRegCheckBoxStatus(regCkeckbox.domElement, "none", "0.5");
-    loadOrigin = true;
-    switchAnimationStatus(
-      "flex",
-      "Prepare and Loading data, please wait......"
-    );
-    if (!state.showRegisterImages) {
-      if (originAllSlices.length > 0) {
-        allSlices = [...originAllSlices];
-        allLoadedMeshes = [...originAllMeshes];
-        filesCount.value = 5;
-        emitter.emit("showRegBtnToRight", {
-          maskNrrdMeshes: originAllMeshes[1],
-          maskSlices: originAllSlices[1],
-          url: urls[1],
-          register: state.showRegisterImages,
-        });
-        return;
-      }
-
-      const reQuestInfo: IRegRquest = {
-        name: currentCaseId,
-        radius: toolsState?.sphereRadius,
-        origin: toolsState?.sphereOrigin.z,
-      };
-
-      if (
-        !(!!originUrls.value?.nrrdUrls && originUrls.value?.nrrdUrls.length > 0)
-      ) {
-        const requests = findRequestUrls(
-          cases.value?.details as Array<IDetails>,
-          reQuestInfo.name,
-          "origin"
-        );
-        await getNrrdAndJsonFileUrls(requests);
-        originUrls.value = caseUrls.value as ICaseUrls;
-      }
-      if (
-        !!originUrls.value?.nrrdUrls &&
-        originUrls.value?.nrrdUrls.length > 0
-      ) {
-        urls = originUrls.value.nrrdUrls;
-        readyToLoad(urls, "origin")?.then((data) => {
-          emitter.emit("showRegBtnToRight", {
-            maskNrrdMeshes: data.meshes[1],
-            maskSlices: data.slices[1],
-            url: urls[1],
-            register: state.showRegisterImages,
-          });
-        });
-      }
-    } else {
-      if (defaultRegAllSlices.length > 0) {
-        allSlices = [...defaultRegAllSlices];
-        allLoadedMeshes = [...defaultRegAllMeshes];
-        emitter.emit("showRegBtnToRight", {
-          maskNrrdMeshes: defaultRegAllMeshes[1],
-          maskSlices: defaultRegAllSlices[1],
-          url: urls[1],
-          register: state.showRegisterImages,
-        });
-        filesCount.value = 5;
-        return;
-      }
-      if (caseUrls.value) {
-        urls = caseUrls.value.nrrdUrls;
-        readyToLoad(urls, "registration");
-      }
-    }
-  });
-  optsGui.add(state, "release");
-  optsGui.closed = false;
-}
-
-function switchRegCheckBoxStatus(
-  checkbox: HTMLElement,
-  pointerEvents: "none" | "auto",
-  opacity: "0.5" | "1"
-) {
-  const inputBox = checkbox.childNodes[0] as HTMLInputElement;
-  inputBox.disabled = !inputBox.disabled;
-  inputBox.readOnly = !inputBox.readOnly;
-  checkbox.style.pointerEvents = pointerEvents;
-  checkbox.style.opacity = opacity;
 }
 </script>
 

@@ -1,6 +1,6 @@
 <template>
   <div>
-    <v-container>
+    <!-- <v-container>
       <v-row style="height: 60px">
         <v-col cols="4" class="d-flex justify-center align-center">
           Debug:
@@ -15,17 +15,26 @@
           ></v-switch>
         </v-col>
       </v-row>
-    </v-container>
+    </v-container> -->
+    <Switcher
+      :title="'Debug Mode'"
+      :label="switchLable"
+      v-model:controller="debugMode"
+      @toggleUpdate="toggleDebug"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
+import Switcher from "@/components/commonBar/Switcher.vue";
 import { ref } from "vue";
 import emitter from "@/plugins/bus";
 
 const debugMode = ref(false);
+const switchLable = ref("off");
 
 function toggleDebug(value: any) {
+  switchLable.value = switchLable.value === "on" ? "off" : "on";
   emitter.emit("show_debug_mode", value);
 }
 </script>

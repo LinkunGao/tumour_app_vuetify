@@ -1,34 +1,36 @@
 <template>
-  <div id="bg" ref="base_container" class="dark">
-    <div v-show="debug_mode" ref="c_gui" id="gui"></div>
-    <div ref="canvas_container" class="canvas_container"></div>
-    <div ref="slice_index_container" class="copper3d_sliceNumber">
-      Tumour Segmentation Panel
-    </div>
+  <div>
+    <div id="bg" ref="base_container" class="dark">
+      <div v-show="debug_mode" ref="c_gui" id="gui"></div>
+      <div ref="canvas_container" class="canvas_container"></div>
+      <div ref="slice_index_container" class="copper3d_sliceNumber">
+        Tumour Segmentation Panel
+      </div>
 
-    <Upload
-      :dialog="dialog"
-      @on-close-dialog="onCloseDialog"
-      @get-load-files-urls="readyToLoad"
-    ></Upload>
-  </div>
-  <div
-    v-show="showNavToolsBar"
-    class="nav_bar_container"
-    ref="nav_bar_container"
-  >
-    <NavBar
-      :file-num="fileNum"
-      :max="max"
-      :immediate-slice-num="immediateSliceNum"
-      :contrast-index="contrastNum"
-      :init-slice-index="initSliceIndex"
-      @on-slice-change="getSliceChangedNum"
-      @reset-main-area-size="resetMainAreaSize"
-      @on-change-orientation="resetSlicesOrientation"
-      @on-save="onSaveMask"
-      @on-open-dialog="onOpenDialog"
-    ></NavBar>
+      <Upload
+        :dialog="dialog"
+        @on-close-dialog="onCloseDialog"
+        @get-load-files-urls="readyToLoad"
+      ></Upload>
+    </div>
+    <div
+      v-show="showNavToolsBar"
+      class="nav_bar_container"
+      ref="nav_bar_container"
+    >
+      <NavBar
+        :file-num="fileNum"
+        :max="max"
+        :immediate-slice-num="immediateSliceNum"
+        :contrast-index="contrastNum"
+        :init-slice-index="initSliceIndex"
+        @on-slice-change="getSliceChangedNum"
+        @reset-main-area-size="resetMainAreaSize"
+        @on-change-orientation="resetSlicesOrientation"
+        @on-save="onSaveMask"
+        @on-open-dialog="onOpenDialog"
+      ></NavBar>
+    </div>
   </div>
 </template>
 <script setup lang="ts">
@@ -36,7 +38,6 @@ import { GUI, GUIController } from "dat.gui";
 // import * as Copper from "copper3d";
 // import "copper3d/dist/css/style.css";
 import * as Copper from "@/ts/index";
-import loadingGif from "@/assets/loading.svg";
 
 import NavBar from "@/components/commonBar/NavBar.vue";
 import Upload from "@/components/commonBar/Upload.vue";
@@ -49,18 +50,22 @@ import {
   ILoadUrls,
   IRegRquest,
   ILoadedMeshes,
+  IRequests,
   ICaseUrls,
   IDetails,
 } from "@/models/apiTypes";
-import { addNameToLoadedMeshes, findRequestUrls } from "./utils-left";
+import { addNameToLoadedMeshes } from "./utils-left";
 import {
   useFileCountStore,
+  useNrrdCaseUrlsStore,
   useInitMarksStore,
   useReplaceMarksStore,
   useSaveSphereStore,
   useSaveMasksStore,
   useMaskStore,
   useClearMaskMeshStore,
+  useRegNrrdUrlsStore,
+  useOriginNrrdUrlsStore,
   useNrrdCaseFileUrlsWithOrderStore,
 } from "@/store/app";
 import {
@@ -172,20 +177,9 @@ function onEmitter() {
       (nav_bar_container.value as HTMLDivElement).style.width = "60%";
     }
   });
-  // emitter.on("containerHight", (h) => {
-  //   (base_container.value as HTMLDivElement).style.height = `${h}vh`;
-  // });
-  emitter.on("caseswitched", async (casename) => {
-    await onCaseSwitched(casename as string);
-  });
-
-  emitter.on("contrastselected", (result) => {
-    const { contrastState, order } = result as any;
-    onContrastSelected(contrastState, order);
-  });
-
-  emitter.on("registerimagechanged", async (result) => {
-    await onRegistedStateChanged(result as boolean);
+  emitter.on("containerHight", (h) => {
+    (base_container.value as HTMLDivElement).style.height = `${h}vh`;
+    // (nav_bar_container.value as HTMLDivElement).style.height = `${60}px`;
   });
 }
 
@@ -218,7 +212,7 @@ onMounted(async () => {
   toolsState = nrrdTools.getNrrdToolsSettings();
   // toolsState.spherePlanB = false;
 
-  loadBarMain = Copper.loading(loadingGif);
+  loadBarMain = Copper.loading();
 
   loadingContainer = loadBarMain.loadingContainer;
   progress = loadBarMain.progress;
@@ -234,7 +228,7 @@ onMounted(async () => {
   });
 
   setupGui();
-  setupCopperScene("nrrd_tools");
+  loadModel("nrrd_tools");
   appRenderer.animate();
 });
 
@@ -323,7 +317,8 @@ const sendInitMaskToBackend = async () => {
 };
 
 const loadJsonMasks = (url: string) => {
-  switchAnimationStatus("flex", "Loading masks data......");
+  loadingContainer.style.display = "flex";
+  progress.innerText = "Loading masks data......";
 
   const xhr = new XMLHttpRequest();
   xhr.open("GET", url, true);
@@ -331,10 +326,13 @@ const loadJsonMasks = (url: string) => {
   xhr.onload = function () {
     if (xhr.status === 200) {
       const data = xhr.response;
+      loadingContainer.style.display = "none";
       if (data === null) {
         console.log("data empty init");
+
         sendInitMaskToBackend();
       }
+
       nrrdTools.setMasksData(data, loadBarMain);
     }
   };
@@ -343,6 +341,8 @@ const loadJsonMasks = (url: string) => {
 
 const setMaskData = () => {
   if (loadedUrls[currentCaseId]) {
+    console.log(toolsState);
+
     if (cases.value) {
       const currentCaseDetail = findCurrentCase(
         cases.value.details,
@@ -356,10 +356,6 @@ const setMaskData = () => {
       }
     }
   }
-  setTimeout(() => {
-    // wait for loading mask, give a delay before user start operate
-    switchAnimationStatus("none");
-  }, 1000);
 };
 
 const switchAnimationStatus = (status: "flex" | "none", text?: string) => {
@@ -473,37 +469,114 @@ watchEffect(() => {
         }
       }
 
-      // send contrast name with states to NrrdImageCtl.vue
-      emitter.emit("setcontrastnames", selectedState);
-
       Copper.removeGuiFolderChilden(selectedContrastFolder);
       for (let i = 0; i < allSlices.length; i++) {
         let name = "";
         i === 0 ? (name = "pre") : (name = "contrast" + i);
         selectedContrastFolder.add(selectedState, name).onChange((flag) => {
-          onContrastSelected(flag, i);
+          if (flag) {
+            fileNum.value += 1;
+            nrrdTools.addSkip(i);
+          } else {
+            fileNum.value -= 1;
+            nrrdTools.removeSkip(i);
+          }
+          const maxNum = nrrdTools.getMaxSliceNum()[1];
+          if (maxNum) {
+            max.value = maxNum;
+            const { currentIndex, contrastIndex } =
+              nrrdTools.getCurrentSlicesNumAndContrastNum();
+
+            immediateSliceNum.value = currentIndex;
+            contrastNum.value = contrastIndex + 1;
+          }
         });
       }
     }
     setTimeout(() => {
       initSliceIndex.value = 0;
       filesCount.value = 0;
-      emitter.emit("finishloadcases", true);
     }, 1000);
     firstLoad = false;
     loadCases = false;
   }
 });
 
-async function setupCopperScene(name: string) {
+async function loadModel(name: string) {
   scene = appRenderer.getSceneByName(name) as Copper.copperScene;
   if (scene == undefined) {
     scene = appRenderer.createScene(name) as Copper.copperScene;
     if (scene) {
       appRenderer.setCurrentScene(scene);
     }
+
+    if ((cases.value?.names as string[]).length > 0) {
+      if (cases.value?.names) {
+        switchAnimationStatus("flex", "Prepare Nrrd files, please wait......");
+        currentCaseId = cases.value?.names[0];
+        const details = cases.value?.details;
+
+        const requests = findRequestUrls(
+          details,
+          currentCaseId,
+          "registration"
+        );
+
+        await getNrrdAndJsonFileUrls(requests);
+
+        if (caseUrls.value) {
+          urls = caseUrls.value.nrrdUrls;
+          // every time switch cases, we store it
+          loadedUrls[currentCaseId] = caseUrls.value;
+          emitter.emit("casename", {
+            currentCaseId,
+            details,
+            maskNrrd: urls[1],
+          });
+        }
+        loadAllNrrds(urls, "registration");
+      }
+    }
   }
 }
+
+const findRequestUrls = (
+  details: Array<IDetails>,
+  caseId: string,
+  type: "registration" | "origin"
+) => {
+  const currentCaseDetails = details.filter((item) => item.name === caseId)[0];
+  const requests: Array<IRequests> = [];
+  if (type === "registration") {
+    currentCaseDetails.file_paths.registration_nrrd_paths.forEach(
+      (filepath) => {
+        requests.push({
+          url: "/single-file",
+          params: { path: filepath },
+        });
+      }
+    );
+  } else if (type === "origin") {
+    currentCaseDetails.file_paths.origin_nrrd_paths.forEach((filepath) => {
+      requests.push({
+        url: "/single-file",
+        params: { path: filepath },
+      });
+    });
+  }
+
+  if (currentCaseDetails.masked) {
+    currentCaseDetails.file_paths.segmentation_manual_mask_paths.forEach(
+      (filepath) => {
+        requests.push({
+          url: "/single-file",
+          params: { path: filepath },
+        });
+      }
+    );
+  }
+  return requests;
+};
 
 const loadAllNrrds = (
   urls: Array<string>,
@@ -565,161 +638,66 @@ const loadAllNrrds = (
   }
 };
 
-/**
- *
- * @param flag [boolean] the effect contrast state, true: add, flase: remove
- * @param i [number] the effect contrast order number
- */
-
-function onContrastSelected(flag: boolean, i: number) {
-  if (flag) {
-    fileNum.value += 1;
-    nrrdTools.addSkip(i);
-  } else {
-    fileNum.value -= 1;
-    nrrdTools.removeSkip(i);
-  }
-  const maxNum = nrrdTools.getMaxSliceNum()[1];
-  if (maxNum) {
-    max.value = maxNum;
-    const { currentIndex, contrastIndex } =
-      nrrdTools.getCurrentSlicesNumAndContrastNum();
-
-    immediateSliceNum.value = currentIndex;
-    contrastNum.value = contrastIndex + 1;
-  }
-}
-
-async function onCaseSwitched(casename: string) {
-  switchAnimationStatus("flex", "Saving masks data, please wait......");
-  // revoke the regsiter images
-  if (!!originUrls.value && originUrls.value.nrrdUrls.length > 0) {
-    revokeRegisterNrrdImages(originUrls.value.nrrdUrls);
-    originUrls.value.nrrdUrls.length = 0;
-  }
-  originAllSlices.length = 0;
-  defaultRegAllSlices.length = 0;
-  originAllMeshes.length = 0;
-  defaultRegAllMeshes.length = 0;
-  // temprary disable this function
-  revokeAppUrls(loadedUrls);
-  loadedUrls = {};
-
-  currentCaseId = casename;
-  await getInitData();
-
-  if (loadedUrls[casename]) {
-    switchAnimationStatus(
-      "flex",
-      "Prepare and Loading masks data, please wait......"
-    );
-    URL.revokeObjectURL(loadedUrls[casename].jsonUrl);
-    await getMaskDataBackend(casename);
-    loadedUrls[casename].jsonUrl = maskBackend.value;
-    urls = loadedUrls[casename].nrrdUrls;
-    if (!!caseUrls.value) {
-      caseUrls.value.nrrdUrls = urls;
-    }
-  } else {
-    switchAnimationStatus("flex", "Prepare Nrrd files, please wait......");
-    // await getCaseFileUrls(value);
-
-    const requests = findRequestUrls(
-      cases.value?.details as Array<IDetails>,
-      currentCaseId,
-      "registration"
-    );
-    await getNrrdAndJsonFileUrls(requests);
-
-    if (!!caseUrls.value) {
-      urls = caseUrls.value.nrrdUrls;
-      loadedUrls[currentCaseId] = caseUrls.value;
-      const details = cases.value?.details;
-      emitter.emit("casename", {
-        currentCaseId,
-        details,
-        maskNrrd: urls[1],
-      });
-    }
-  }
-
-  readyToLoad(urls, "registration");
-  loadCases = true;
-}
-
-async function onRegistedStateChanged(isShowRegisterImage: boolean) {
-  switchRegCheckBoxStatus(regCkeckbox.domElement, "none", "0.5");
-  loadOrigin = true;
-  switchAnimationStatus("flex", "Prepare and Loading data, please wait......");
-  if (!isShowRegisterImage) {
-    if (originAllSlices.length > 0) {
-      allSlices = [...originAllSlices];
-      allLoadedMeshes = [...originAllMeshes];
-      filesCount.value = 5;
-      emitter.emit("showRegBtnToRight", {
-        maskNrrdMeshes: originAllMeshes[1],
-        maskSlices: originAllSlices[1],
-        url: urls[1],
-        register: isShowRegisterImage,
-      });
-      return;
-    }
-
-    const reQuestInfo: IRegRquest = {
-      name: currentCaseId,
-      radius: toolsState?.sphereRadius,
-      origin: toolsState?.sphereOrigin.z,
-    };
-
-    if (
-      !(!!originUrls.value?.nrrdUrls && originUrls.value?.nrrdUrls.length > 0)
-    ) {
-      const requests = findRequestUrls(
-        cases.value?.details as Array<IDetails>,
-        reQuestInfo.name,
-        "origin"
-      );
-      await getNrrdAndJsonFileUrls(requests);
-      originUrls.value = caseUrls.value as ICaseUrls;
-    }
-    if (!!originUrls.value?.nrrdUrls && originUrls.value?.nrrdUrls.length > 0) {
-      urls = originUrls.value.nrrdUrls;
-      readyToLoad(urls, "origin")?.then((data) => {
-        emitter.emit("showRegBtnToRight", {
-          maskNrrdMeshes: data.meshes[1],
-          maskSlices: data.slices[1],
-          url: urls[1],
-          register: isShowRegisterImage,
-        });
-      });
-    }
-  } else {
-    if (defaultRegAllSlices.length > 0) {
-      allSlices = [...defaultRegAllSlices];
-      allLoadedMeshes = [...defaultRegAllMeshes];
-      emitter.emit("showRegBtnToRight", {
-        maskNrrdMeshes: defaultRegAllMeshes[1],
-        maskSlices: defaultRegAllSlices[1],
-        url: urls[1],
-        register: isShowRegisterImage,
-      });
-      filesCount.value = 5;
-      return;
-    }
-    if (caseUrls.value) {
-      urls = caseUrls.value.nrrdUrls;
-      readyToLoad(urls, "registration");
-    }
-  }
-}
-
 function setupGui() {
   state.switchCase = cases.value?.names[0] as string;
 
   gui
     .add(state, "switchCase", cases.value?.names as string[])
     .onChange(async (caseId) => {
-      await onCaseSwitched(caseId);
+      switchAnimationStatus("flex", "Saving masks data, please wait......");
+      // revoke the regsiter images
+      if (!!originUrls.value && originUrls.value.nrrdUrls.length > 0) {
+        revokeRegisterNrrdImages(originUrls.value.nrrdUrls);
+        originUrls.value.nrrdUrls.length = 0;
+      }
+      originAllSlices.length = 0;
+      defaultRegAllSlices.length = 0;
+      originAllMeshes.length = 0;
+      defaultRegAllMeshes.length = 0;
+      // temprary disable this function
+      revokeAppUrls(loadedUrls);
+      loadedUrls = {};
+
+      currentCaseId = caseId;
+      await getInitData();
+
+      if (loadedUrls[caseId]) {
+        switchAnimationStatus(
+          "flex",
+          "Prepare and Loading masks data, please wait......"
+        );
+        URL.revokeObjectURL(loadedUrls[caseId].jsonUrl);
+        await getMaskDataBackend(caseId);
+        loadedUrls[caseId].jsonUrl = maskBackend.value;
+        urls = loadedUrls[caseId].nrrdUrls;
+        if (!!caseUrls.value) {
+          caseUrls.value.nrrdUrls = urls;
+        }
+      } else {
+        switchAnimationStatus("flex", "Prepare Nrrd files, please wait......");
+        // await getCaseFileUrls(value);
+
+        const requests = findRequestUrls(
+          cases.value?.details as Array<IDetails>,
+          currentCaseId,
+          "registration"
+        );
+        await getNrrdAndJsonFileUrls(requests);
+
+        if (!!caseUrls.value) {
+          urls = caseUrls.value.nrrdUrls;
+          loadedUrls[currentCaseId] = caseUrls.value;
+          const details = cases.value?.details;
+          emitter.emit("casename", {
+            currentCaseId,
+            details,
+            maskNrrd: urls[1],
+          });
+        }
+      }
+
+      readyToLoad(urls, "registration");
+      loadCases = true;
       setUpGuiAfterLoading();
     });
 
@@ -741,7 +719,75 @@ function setUpGuiAfterLoading() {
       return;
     }
 
-    await onRegistedStateChanged(state.showRegisterImages);
+    switchRegCheckBoxStatus(regCkeckbox.domElement, "none", "0.5");
+    loadOrigin = true;
+    switchAnimationStatus(
+      "flex",
+      "Prepare and Loading data, please wait......"
+    );
+    if (!state.showRegisterImages) {
+      if (originAllSlices.length > 0) {
+        allSlices = [...originAllSlices];
+        allLoadedMeshes = [...originAllMeshes];
+        filesCount.value = 5;
+        emitter.emit("showRegBtnToRight", {
+          maskNrrdMeshes: originAllMeshes[1],
+          maskSlices: originAllSlices[1],
+          url: urls[1],
+          register: state.showRegisterImages,
+        });
+        return;
+      }
+
+      const reQuestInfo: IRegRquest = {
+        name: currentCaseId,
+        radius: toolsState?.sphereRadius,
+        origin: toolsState?.sphereOrigin.z,
+      };
+
+      if (
+        !(!!originUrls.value?.nrrdUrls && originUrls.value?.nrrdUrls.length > 0)
+      ) {
+        const requests = findRequestUrls(
+          cases.value?.details as Array<IDetails>,
+          reQuestInfo.name,
+          "origin"
+        );
+        await getNrrdAndJsonFileUrls(requests);
+        originUrls.value = caseUrls.value as ICaseUrls;
+      }
+      if (
+        !!originUrls.value?.nrrdUrls &&
+        originUrls.value?.nrrdUrls.length > 0
+      ) {
+        urls = originUrls.value.nrrdUrls;
+        readyToLoad(urls, "origin")?.then((data) => {
+          emitter.emit("showRegBtnToRight", {
+            maskNrrdMeshes: data.meshes[1],
+            maskSlices: data.slices[1],
+            url: urls[1],
+            register: state.showRegisterImages,
+          });
+        });
+      }
+    } else {
+      if (defaultRegAllSlices.length > 0) {
+        allSlices = [...defaultRegAllSlices];
+        allLoadedMeshes = [...defaultRegAllMeshes];
+        emitter.emit("showRegBtnToRight", {
+          maskNrrdMeshes: defaultRegAllMeshes[1],
+          maskSlices: defaultRegAllSlices[1],
+          url: urls[1],
+          register: state.showRegisterImages,
+        });
+        filesCount.value = 5;
+        return;
+      }
+      if (caseUrls.value) {
+        urls = caseUrls.value.nrrdUrls;
+        readyToLoad(urls, "registration");
+      }
+    }
   });
   optsGui.add(state, "release");
   optsGui.closed = false;
@@ -764,7 +810,6 @@ function switchRegCheckBoxStatus(
 #bg {
   width: 100%;
   /* height: 100vh; */
-  flex: 0 0 90%;
   overflow: hidden;
   position: relative;
   /* border: 1px solid palevioletred; */
@@ -791,7 +836,6 @@ function switchRegCheckBoxStatus(
 }
 
 .nav_bar_container {
-  flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;

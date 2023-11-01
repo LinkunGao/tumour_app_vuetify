@@ -140,8 +140,6 @@ export class DragOperator {
         );
       }
 
-      console.log("move", this.dragPrameters.move);
-
       this.updateIndex(this.dragPrameters.move);
       opts?.getSliceNum &&
         opts.getSliceNum(
