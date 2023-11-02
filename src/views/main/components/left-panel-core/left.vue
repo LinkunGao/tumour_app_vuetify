@@ -488,7 +488,8 @@ watchEffect(() => {
     setTimeout(() => {
       initSliceIndex.value = 0;
       filesCount.value = 0;
-      emitter.emit("finishloadcases", true);
+      const guiSettings = nrrdTools.getGuiSettings();
+      emitter.emit("finishloadcases", guiSettings);
     }, 1000);
     firstLoad = false;
     loadCases = false;

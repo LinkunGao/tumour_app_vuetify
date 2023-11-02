@@ -30,6 +30,7 @@ export class NrrdTools extends DrawToolCore {
 
   private initState: boolean = true;
   private preTimer: any;
+  private guiParameterSettings: any;
 
   constructor(container: HTMLDivElement) {
     super(container);
@@ -127,7 +128,14 @@ export class NrrdTools extends DrawToolCore {
       filterDrawedImage: this.filterDrawedImage,
       setEmptyCanvasSize: this.setEmptyCanvasSize,
     };
-    setupGui(guiOptions);
+    this.guiParameterSettings = setupGui(guiOptions);
+  }
+
+  getGuiSettings() {
+    return {
+      guiState: this.gui_states,
+      guiSetting: this.guiParameterSettings,
+    };
   }
 
   /**

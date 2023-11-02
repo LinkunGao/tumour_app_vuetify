@@ -3,7 +3,7 @@
     <template v-slot:activator="{ props }">
       <v-list-item
         v-bind="props"
-        color="primary"
+        color="nav-success"
         prepend-icon="mdi-image"
         title="Cases Select"
       ></v-list-item>
@@ -39,7 +39,7 @@
 
 <script setup lang="ts">
 import Switcher from "@/components/commonBar/Switcher.vue";
-import { ref, onMounted, Ref } from "vue";
+import { ref, onMounted } from "vue";
 import { useFileCountStore } from "@/store/app";
 import { storeToRefs } from "pinia";
 import emitter from "@/plugins/bus";
