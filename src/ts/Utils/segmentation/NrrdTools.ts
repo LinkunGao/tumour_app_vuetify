@@ -978,6 +978,11 @@ export class NrrdTools extends DrawToolCore {
       this.protectedData.canvases.displayCanvas.style.top =
         this.protectedData.canvases.drawingCanvas.style.top = t + "px";
     } else {
+      this.protectedData.canvases.displayCanvas.style.left =
+        this.protectedData.canvases.drawingCanvas.style.left = "";
+      this.protectedData.canvases.displayCanvas.style.top =
+        this.protectedData.canvases.drawingCanvas.style.top = "";
+
       this.protectedData.mainAreaContainer.style.justifyContent = "center";
       this.protectedData.mainAreaContainer.style.alignItems = "center";
     }

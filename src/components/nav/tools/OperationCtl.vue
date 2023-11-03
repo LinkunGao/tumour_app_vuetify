@@ -77,6 +77,32 @@
         buffer-value="0"
         stream
       ></v-progress-linear>
+
+      <!-- Buttons -->
+      <v-progress-linear
+        color="nav-success"
+        buffer-value="0"
+        stream
+      ></v-progress-linear>
+
+      <v-btn
+        v-for="(btn, idx) in commFuncBtnValues"
+        block
+        density="comfortable"
+        variant="outlined"
+        class="my-1"
+        :key="idx"
+        :color="btn.color"
+        :disabled="btn.disabled"
+        @click="onBtnClick(btn.value)"
+        >{{ btn.label }}</v-btn
+      >
+
+      <v-progress-linear
+        color="nav-success"
+        buffer-value="0"
+        stream
+      ></v-progress-linear>
     </v-container>
 
     <OperationAdvance />
@@ -87,19 +113,6 @@
 import OperationAdvance from "./advance/OperationAdvance.vue";
 import { ref, onMounted } from "vue";
 import emitter from "@/plugins/bus";
-
-const commFuncRadioValues = ref([
-  { label: "Pencil", value: "segmentation", color: "success" },
-  { label: "Spere", value: "sphere", color: "warning" },
-  { label: "Eraser", value: "Eraser", color: "error" },
-  { label: "Brush", value: "brush", color: "info" },
-]);
-
-const commSliderRadioValues = ref([
-  { label: "Opacity", value: "globalAlpha", color: "success" },
-  { label: "B&E size", value: "brushAndEraserSize", color: "info" },
-  { label: "ImageContrast", value: "windowHigh", color: "warning" },
-]);
 
 // Functional Controls
 const commFuncRadios = ref("segmentation");
@@ -115,7 +128,53 @@ const sliderMax = ref(100);
 const sliderMin = ref(0);
 const sliderStep = ref(1);
 
+// Functional Buttons
+const btnUndoDisabled = ref(true);
+const btnResetZoomDisabled = ref(true);
+const btnClearDisabled = ref(true);
+const btnClearAllDisabled = ref(true);
+
 const guiSettings = ref<any>();
+
+const commFuncRadioValues = ref([
+  { label: "Pencil", value: "segmentation", color: "success" },
+  { label: "Spere", value: "sphere", color: "warning" },
+  { label: "Eraser", value: "Eraser", color: "error" },
+  { label: "Brush", value: "brush", color: "info" },
+]);
+
+const commSliderRadioValues = ref([
+  { label: "Opacity", value: "globalAlpha", color: "success" },
+  { label: "B&E size", value: "brushAndEraserSize", color: "info" },
+  { label: "ImageContrast", value: "windowHigh", color: "warning" },
+]);
+
+const commFuncBtnValues = ref([
+  {
+    label: "Undo",
+    value: "undo",
+    disabled: btnUndoDisabled,
+    color: "nav-success-2",
+  },
+  {
+    label: "Reset Zoom",
+    value: "resetZoom",
+    disabled: btnResetZoomDisabled,
+    color: "nav-success-2",
+  },
+  {
+    label: "Clear Slice Mask",
+    value: "clear",
+    disabled: btnClearDisabled,
+    color: "nav-success-2",
+  },
+  {
+    label: "Clear All Slices Masks",
+    value: "clearAll",
+    disabled: btnClearAllDisabled,
+    color: "nav-success",
+  },
+]);
 
 onMounted(() => {
   manageEmitters();
@@ -129,6 +188,11 @@ function manageEmitters() {
     commFuncRadiosDisabled.value = false;
     commSliderRadiosDisabled.value = false;
     sliderDisabled.value = false;
+
+    btnUndoDisabled.value = false;
+    btnResetZoomDisabled.value = false;
+    btnClearDisabled.value = false;
+    btnClearAllDisabled.value = false;
   });
 }
 
@@ -194,6 +258,10 @@ function updateSliderSettings() {
   if (radioSettings.length > 0) {
     sliderColor.value = radioSettings[0].color;
   }
+}
+
+function onBtnClick(val: any) {
+  guiSettings.value.guiState[val].call();
 }
 </script>
 
