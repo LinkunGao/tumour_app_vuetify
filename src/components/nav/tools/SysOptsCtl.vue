@@ -2,9 +2,15 @@
   <div>
     <Switcher
       :title="'Debug Mode'"
-      :label="switchLable"
+      :label="switchDebugLabel"
       v-model:controller="debugMode"
       @toggleUpdate="toggleDebug"
+    />
+    <Switcher
+      :title="'Sticky Tool Settings Bar'"
+      :label="switchStickyLabel"
+      v-model:controller="stickMode"
+      @toggleUpdate="toggleSticky"
     />
   </div>
 </template>
@@ -15,11 +21,19 @@ import { ref } from "vue";
 import emitter from "@/plugins/bus";
 
 const debugMode = ref(false);
-const switchLable = ref("off");
+const switchDebugLabel = ref("off");
 
-function toggleDebug(value: any) {
-  switchLable.value = switchLable.value === "on" ? "off" : "on";
+const stickMode = ref(false);
+const switchStickyLabel = ref("off");
+
+function toggleDebug(value: boolean) {
+  switchDebugLabel.value = switchDebugLabel.value === "on" ? "off" : "on";
   emitter.emit("show_debug_mode", value);
+}
+
+function toggleSticky(value: boolean) {
+  switchStickyLabel.value = switchStickyLabel.value === "on" ? "off" : "on";
+  emitter.emit("set_nav_sticky_mode", value);
 }
 </script>
 

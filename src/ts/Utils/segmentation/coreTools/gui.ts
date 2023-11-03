@@ -98,13 +98,10 @@ function setupGui(configs: IConfigGUI) {
     )
     .name("ImageContrast")
     .onChange((value: number) => {
-      configs.gui_states.readyToUpdate = false;
-      configs.updateSlicesContrast(value, "windowHigh");
+      updateGuiImageContrastOnChange(value);
     })
     .onFinishChange(() => {
-      repraintAllContrastSlices(configs.protectedData.displaySlices);
-
-      configs.gui_states.readyToUpdate = true;
+      updateGuiImageContrastOnFinished();
     });
 
   const advanceFolder = configs.modeFolder.addFolder("AdvanceSettings");
@@ -305,6 +302,15 @@ function setupGui(configs: IConfigGUI) {
     }
   };
 
+  const updateGuiImageContrastOnChange = (value: number) => {
+    configs.gui_states.readyToUpdate = false;
+    configs.updateSlicesContrast(value, "windowHigh");
+  };
+  const updateGuiImageContrastOnFinished = () => {
+    repraintAllContrastSlices(configs.protectedData.displaySlices);
+    configs.gui_states.readyToUpdate = true;
+  };
+
   return {
     globalAlpha: {
       name: "Opacity",
@@ -345,11 +351,12 @@ function setupGui(configs: IConfigGUI) {
     },
     windowHigh: {
       name: "ImageContrast",
-      value: configs.mainPreSlices.volume.windowHigh,
+      value: configs.mainPreSlices.volume,
       min: configs.mainPreSlices.volume.min,
       max: configs.mainPreSlices.volume.max,
-      onChange: null,
-      onFinished: null,
+      step: 1,
+      onChange: updateGuiImageContrastOnChange,
+      onFinished: updateGuiImageContrastOnFinished,
     },
     advance: {
       label: {

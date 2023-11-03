@@ -3,7 +3,7 @@
     v-model="drawer"
     :rounded="true"
     :disable-resize-watcher="true"
-    :temporary="true"
+    :temporary="temporary"
     :width="350"
   >
     <!--     :theme="drawerTheme" -->
@@ -40,7 +40,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, onMounted } from "vue";
 import { useTheme } from "vuetify";
 
 import NavPanel from "@/components/nav/NavPanel.vue";
@@ -50,8 +50,24 @@ import emitter from "@/plugins/bus";
 const drawerTheme = ref("dark");
 
 const drawer = ref(false);
+const temporary = ref(true);
 
 const theme = useTheme();
+
+onMounted(() => {
+  manageEmitters();
+});
+
+function manageEmitters() {
+  // set_nav_sticky_mode
+
+  emitter.on("set_nav_sticky_mode", (val) => {
+    temporary.value = !val;
+    emitter.emit("resize-left-right-panels", {
+      panel: "right",
+    });
+  });
+}
 
 function toggleDrawer() {
   drawer.value = !drawer.value;

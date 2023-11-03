@@ -70,6 +70,7 @@
         :min="sliderMin"
         :step="sliderStep"
         @update:modelValue="toggleSlider"
+        @end="toggleSliderFinished"
       ></v-slider>
       <v-progress-linear
         color="nav-success"
@@ -160,7 +161,18 @@ function toggleSliderRadios(val: any) {
 function toggleSlider(val: number) {
   if (commSliderRadios.value !== "windowHigh") {
     guiSettings.value.guiState[commSliderRadios.value] = val;
+  }
+  if (commSliderRadios.value === "brushAndEraserSize") {
     guiSettings.value.guiSetting[commSliderRadios.value].onChange();
+  }
+  if (commSliderRadios.value === "windowHigh") {
+    guiSettings.value.guiSetting[commSliderRadios.value].onChange(val);
+  }
+}
+
+function toggleSliderFinished(val: number) {
+  if (commSliderRadios.value === "windowHigh") {
+    guiSettings.value.guiSetting[commSliderRadios.value].onFinished();
   }
 }
 
@@ -168,7 +180,8 @@ function updateSliderSettings() {
   if (commSliderRadios.value !== "windowHigh") {
     slider.value = guiSettings.value.guiState[commSliderRadios.value];
   } else {
-    slider.value = guiSettings.value.guiSetting[commSliderRadios.value].value;
+    slider.value =
+      guiSettings.value.guiSetting[commSliderRadios.value].value.windowHigh;
   }
   sliderMax.value = guiSettings.value.guiSetting[commSliderRadios.value].max;
   sliderMin.value = guiSettings.value.guiSetting[commSliderRadios.value].min;
