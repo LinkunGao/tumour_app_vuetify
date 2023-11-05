@@ -31,6 +31,7 @@ import LeftPanel from "./components/left-panel-core/left.vue";
 import RightPanel from "./components/right-panel-core/right.vue";
 import { ref, onMounted } from "vue";
 import emitter from "@/plugins/bus";
+import { throttle } from "./components/tools";
 
 const mainContainer = ref<HTMLDivElement>();
 const splitBar = ref<HTMLDivElement>();
@@ -53,7 +54,7 @@ onMounted(() => {
 
   splitBar.value?.addEventListener("mousedown", function (e) {
     isDragging = true;
-    document.addEventListener("mousemove", moveSplitLine);
+    document.addEventListener("mousemove", throttle(moveSplitLine, 80));
   });
 
   document.addEventListener("mouseup", function (e) {

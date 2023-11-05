@@ -189,3 +189,14 @@ function getNippleClock(tumourCenter: THREE.Vector3, nipplePos: THREE.Vector3) {
 
   return { rd, angle, time };
 }
+
+export function throttle(callback: (event: MouseEvent) => void, wait: number) {
+  let start: number = 0;
+  return function (event: MouseEvent) {
+    const current: number = Date.now();
+    if (current - start > wait) {
+      callback.call(null, event);
+      start = current;
+    }
+  };
+}
