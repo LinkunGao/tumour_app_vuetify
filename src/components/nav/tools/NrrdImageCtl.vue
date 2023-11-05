@@ -3,50 +3,154 @@
     <template v-slot:activator="{ props }">
       <v-list-item
         v-bind="props"
-        color="primary"
+        color="nav-success"
         prepend-icon="mdi-image"
         title="Cases Select"
       ></v-list-item>
     </template>
 
-    <v-select :items="cases" density="compact" label="Cases"></v-select>
     <v-select
-      v-model="contrastValue"
-      :items="contrast"
+      :items="cases?.names"
+      density="compact"
+      label="Cases"
+      :disabled="disableSelectCase"
+      @update:modelValue="onCaseSwitched"
+    ></v-select>
+    <v-select
+      v-model="slectedContrast"
+      :items="contrastValue"
+      :disabled="disableSelectContrast"
       chips
       label="Contrast Select"
       multiple
+      @update:modelValue="onContrastSelected"
     ></v-select>
+
+    <Switcher
+      v-model:controller="switchRegisted"
+      :title="switchTitle"
+      :disabled="switchDisabled"
+      :label="switchLable"
+      :loading="switchLoading"
+      @toggleUpdate="toggleRegisterChanged"
+    />
   </v-list-group>
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import Switcher from "@/components/commonBar/Switcher.vue";
+import { ref, onMounted } from "vue";
+import { useFileCountStore } from "@/store/app";
+import { storeToRefs } from "pinia";
+import emitter from "@/plugins/bus";
 
-const cases = ref([
-  "CL00012",
-  "CL00013",
-  "CL00015",
-  "CL00017",
-  "CL00024",
-  "CL00033",
-]);
-const contrastValue = ref([
-  "Contrast Pre",
-  "Contrast 1",
-  "Contrast 2",
-  "Contrast 3",
-  "Contrast 4",
-  "Contrast 5",
-]);
-const contrast = ref([
-  "Contrast Pre",
-  "Contrast 1",
-  "Contrast 2",
-  "Contrast 3",
-  "Contrast 4",
-  "Contrast 5",
-]);
+type selecedType = {
+  [key: string]: boolean;
+};
+type resultType = {
+  [key: string]: any;
+};
+
+const { cases } = storeToRefs(useFileCountStore());
+const { getFilesNames } = useFileCountStore();
+const disableSelectCase = ref(false);
+const disableSelectContrast = ref(true);
+const contrastValue = ref<string[]>([]);
+const slectedContrast = ref<string[]>([]);
+const contrastOrder: any = {
+  pre: 0,
+  contrast1: 1,
+  contrast2: 2,
+  contrast3: 3,
+  contrast4: 4,
+};
+const switchRegisted = ref<boolean>(true);
+const switchTitle = ref<string>("Register Images");
+const switchLoading = ref<boolean | string>(false);
+const switchDisabled = ref<boolean>(true);
+const switchLable = ref<"on" | "off">("on");
+
+let contrastState: selecedType;
+
+onMounted(() => {
+  manageEmitters();
+});
+
+function manageEmitters() {
+  emitter.on("finishloadcases", () => {
+    disableSelectCase.value = false;
+    switchDisabled.value = false;
+    switchLoading.value = false;
+  });
+  emitter.on("setcontrastnames", (contrastStates) => {
+    slectedContrast.value = [];
+    contrastState = contrastStates as selecedType;
+    contrastValue.value = Object.keys(contrastState);
+    for (const key in contrastState) {
+      if (contrastState.hasOwnProperty(key)) {
+        if (contrastState[key]) {
+          slectedContrast.value.push(key);
+        }
+      }
+    }
+    disableSelectContrast.value = false;
+  });
+}
+
+function onCaseSwitched(casename: any) {
+  disableSelectCase.value = true;
+  disableSelectContrast.value = true;
+  switchDisabled.value = true;
+  switchLable.value = "on";
+  switchRegisted.value = true;
+  switchLoading.value = "warning";
+  emitter.emit("caseswitched", casename);
+}
+
+function onContrastSelected(contrasts: string[]) {
+  let result: resultType = {};
+  sort(slectedContrast.value);
+  for (const key in contrastState) {
+    if (contrastState.hasOwnProperty(key)) {
+      if (contrasts.includes(key)) {
+        if (!contrastState[key]) {
+          // add a contrast, set its state to ture
+          contrastState[key] = true;
+          result["effect"] = key;
+          result["order"] = contrastOrder[key];
+          result["contrastState"] = true;
+          emitter.emit("contrastselected", result);
+        }
+      } else {
+        if (contrastState[key]) {
+          // remove a contrast, set its state to ture
+          contrastState[key] = false;
+          result["effect"] = key;
+          result["order"] = contrastOrder[key];
+          result["contrastState"] = false;
+          emitter.emit("contrastselected", result);
+        }
+      }
+    }
+  }
+}
+
+function toggleRegisterChanged(value: boolean) {
+  switchLable.value = switchLable.value === "on" ? "off" : "on";
+  switchDisabled.value = true;
+  switchLoading.value = "warning";
+  emitter.emit("registerimagechanged", value);
+}
+
+const sort = (arr: string[]) => {
+  arr.sort((a, b) => {
+    return contrastOrder[a] - contrastOrder[b];
+  });
+};
+
+async function getInitData() {
+  await getFilesNames();
+}
 </script>
 
 <style scoped></style>

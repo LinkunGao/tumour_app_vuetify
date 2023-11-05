@@ -1,16 +1,22 @@
 <template>
-  <v-navigation-drawer v-model="drawer">
-    <!--  -->
+  <v-navigation-drawer
+    v-model="drawer"
+    :rounded="true"
+    :disable-resize-watcher="true"
+    :temporary="temporary"
+    :width="350"
+  >
+    <!--     :theme="drawerTheme" -->
 
     <NavPanel />
   </v-navigation-drawer>
 
   <v-app-bar color="surface" class="d-flex justify-end">
-    <v-app-bar-nav-icon @click="drawer = !drawer"></v-app-bar-nav-icon>
+    <v-app-bar-nav-icon @click="toggleDrawer"></v-app-bar-nav-icon>
 
     <v-app-bar-title class="text-deep-orange">
-      <span>Tumour Segmentation APP </span>
-      <span class="text-body-2">v2.3.6</span>
+      <span>Tumour Tracking APP </span>
+      <span class="text-body-2">v3.0.0</span>
     </v-app-bar-title>
 
     <div width="" class="w-50 d-flex flex-row justify-end align-center px-2">
@@ -34,21 +40,51 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, onMounted } from "vue";
 import { useTheme } from "vuetify";
 
 import NavPanel from "@/components/nav/NavPanel.vue";
 import IntroPanel from "@/components/intro/IntroPanel.vue";
+import emitter from "@/plugins/bus";
+
+const drawerTheme = ref("dark");
 
 const drawer = ref(false);
+const temporary = ref(true);
 
 const theme = useTheme();
+
+onMounted(() => {
+  manageEmitters();
+});
+
+function manageEmitters() {
+  // set_nav_sticky_mode
+
+  emitter.on("set_nav_sticky_mode", (val) => {
+    temporary.value = !val;
+    emitter.emit("resize-left-right-panels", {
+      panel: "right",
+    });
+  });
+}
+
+function toggleDrawer() {
+  drawer.value = !drawer.value;
+  emitter.emit("resize-left-right-panels", {
+    panel: "right",
+  });
+}
 
 function toggleTheme(value: any) {
   // theme.global.current.value.dark
   theme.global.name.value = theme.global.current.value.dark
     ? "lightTheme"
     : "darkTheme";
+
+  drawerTheme.value = theme.global.current.value.dark ? "dark" : "light";
+
+  emitter.emit("toggleTheme", theme.global.name.value);
 }
 </script>
 <style></style>

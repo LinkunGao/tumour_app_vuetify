@@ -11,7 +11,12 @@ import { fileURLToPath, URL } from "node:url";
 export default defineConfig({
   plugins: [
     vue({
-      template: { transformAssetUrls },
+      template: {
+        transformAssetUrls,
+        compilerOptions: {
+          isCustomElement: (tag) => tag.startsWith("ion-"),
+        },
+      },
     }),
     // https://github.com/vuetifyjs/vuetify-loader/tree/next/packages/vite-plugin
     vuetify({
@@ -31,7 +36,7 @@ export default defineConfig({
   ],
   define: {
     "process.env": {
-      BASE_URL: "/Tumour_App_Vuetify/",
+      BASE_URL: "/Tumour_Tracking_App/",
     },
   },
   resolve: {
@@ -40,7 +45,7 @@ export default defineConfig({
     },
     extensions: [".js", ".json", ".jsx", ".mjs", ".ts", ".tsx", ".vue"],
   },
-  base: "/Tumour_App_Vuetify/",
+  base: "/Tumour_Tracking_App/",
   build: {
     outDir: "./build",
   },

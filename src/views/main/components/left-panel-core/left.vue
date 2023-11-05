@@ -1,62 +1,66 @@
 <template>
-  <div style="height: 100vh">
-    <div id="bg" ref="base_container">
-      <div ref="c_gui" id="gui"></div>
-      <div ref="nrrd_c" class="nrrd_c"></div>
+  <div id="bg" ref="base_container" class="dark">
+    <div v-show="debug_mode" ref="c_gui" id="gui"></div>
+    <div ref="canvas_container" class="canvas_container"></div>
+    <div ref="slice_index_container" class="copper3d_sliceNumber">
+      Tumour Segmentation Panel
+    </div>
 
-      <Upload
-        :dialog="dialog"
-        @on-close-dialog="onCloseDialog"
-        @get-load-files-urls="readyToLoad"
-      ></Upload>
-    </div>
-    <div class="navBar" ref="navBar">
-      <NavBar
-        :file-num="fileNum"
-        :max="max"
-        :immediate-slice-num="immediateSliceNum"
-        :contrast-index="contrastNum"
-        :init-slice-index="initSliceIndex"
-        @on-slice-change="getSliceChangedNum"
-        @reset-main-area-size="resetMainAreaSize"
-        @on-change-orientation="resetSlicesOrientation"
-        @on-save="onSaveMask"
-        @on-open-dialog="onOpenDialog"
-      ></NavBar>
-    </div>
+    <Upload
+      :dialog="dialog"
+      @on-close-dialog="onCloseDialog"
+      @get-load-files-urls="readyToLoad"
+    ></Upload>
+  </div>
+  <div
+    v-show="showNavToolsBar"
+    class="nav_bar_container"
+    ref="nav_bar_container"
+  >
+    <NavBar
+      :file-num="fileNum"
+      :max="max"
+      :immediate-slice-num="immediateSliceNum"
+      :contrast-index="contrastNum"
+      :init-slice-index="initSliceIndex"
+      @on-slice-change="getSliceChangedNum"
+      @reset-main-area-size="resetMainAreaSize"
+      @on-change-orientation="resetSlicesOrientation"
+      @on-save="onSaveMask"
+      @on-open-dialog="onOpenDialog"
+    ></NavBar>
   </div>
 </template>
 <script setup lang="ts">
 import { GUI, GUIController } from "dat.gui";
-// import * as Copper from "copper3d";
-// import "copper3d/dist/css/style.css";
-import * as Copper from "@/ts/index";
+import * as Copper from "copper3d";
+import "copper3d/dist/css/style.css";
+// import * as Copper from "@/ts/index";
+import loadingGif from "@/assets/loading.svg";
 
-import NavBar from "@/components/tools/NavBar.vue";
-import Upload from "@/components/tools/Upload.vue";
+import NavBar from "@/components/commonBar/NavBar.vue";
+import Upload from "@/components/commonBar/Upload.vue";
 import { onMounted, ref, watchEffect } from "vue";
 import { storeToRefs } from "pinia";
 import {
   IStoredMasks,
   IReplaceMask,
+  ISaveSphere,
   ILoadUrls,
   IRegRquest,
   ILoadedMeshes,
-  IRequests,
   ICaseUrls,
   IDetails,
 } from "@/models/apiTypes";
-import { addNameToLoadedMeshes } from "./utils-left";
+import { addNameToLoadedMeshes, findRequestUrls } from "./utils-left";
 import {
   useFileCountStore,
-  useNrrdCaseUrlsStore,
   useInitMarksStore,
   useReplaceMarksStore,
+  useSaveSphereStore,
   useSaveMasksStore,
   useMaskStore,
   useClearMaskMeshStore,
-  useRegNrrdUrlsStore,
-  useOriginNrrdUrlsStore,
   useNrrdCaseFileUrlsWithOrderStore,
 } from "@/store/app";
 import {
@@ -64,8 +68,10 @@ import {
   revokeAppUrls,
   revokeRegisterNrrdImages,
   getEraserUrlsForOffLine,
+  getCursorUrlsForOffLine,
 } from "@/views/main/components/tools";
 import emitter from "@/plugins/bus";
+import { convertInitMaskData } from "@/plugins/worker";
 
 let appRenderer: Copper.copperRenderer;
 let max = ref(0);
@@ -77,8 +83,10 @@ let dialog = ref(false);
 
 let base_container = ref<HTMLDivElement>();
 let c_gui = ref<HTMLDivElement>();
-let nrrd_c = ref<HTMLDivElement>();
-let navBar = ref<HTMLDivElement>();
+let canvas_container = ref<HTMLDivElement>();
+let nav_bar_container = ref<HTMLDivElement>();
+let slice_index_container = ref<HTMLDivElement>();
+let debug_mode = ref(false);
 
 let scene: Copper.copperScene | undefined;
 let pre_slices = ref();
@@ -105,11 +113,11 @@ let loadCases = true;
 let loadOrigin = false;
 
 let currentCaseId = "";
-let showIntro = ref(false);
 let regCheckboxElement: HTMLInputElement;
 
+let showNavToolsBar = ref(true);
+
 let state = {
-  introduction: showIntro.value,
   showContrast: false,
   switchCase: "",
   showRegisterImages: true,
@@ -129,6 +137,7 @@ const { cases } = storeToRefs(useFileCountStore());
 const { getFilesNames } = useFileCountStore();
 const { sendInitMask } = useInitMarksStore();
 const { sendReplaceMask } = useReplaceMarksStore();
+const { sendSaveSphere } = useSaveSphereStore();
 const { sendSaveMask } = useSaveMasksStore();
 const { maskBackend } = storeToRefs(useMaskStore());
 const { getMaskDataBackend } = useMaskStore();
@@ -136,23 +145,53 @@ const { clearMaskMeshObj } = useClearMaskMeshStore();
 const { getNrrdAndJsonFileUrls } = useNrrdCaseFileUrlsWithOrderStore();
 const { caseUrls } = storeToRefs(useNrrdCaseFileUrlsWithOrderStore());
 let originUrls = ref<ICaseUrls>({ nrrdUrls: [], jsonUrl: "" });
-// web worker for send masks to backend
-const worker = new Worker(
-  new URL("../../../utils/worker.ts", import.meta.url),
-  {
-    type: "module",
-  }
-);
 
 const eraserUrls = getEraserUrlsForOffLine();
+const cursorUrls = getCursorUrlsForOffLine();
+
+function onEmitter() {
+  emitter.on("show_debug_mode", (flag) => {
+    debug_mode.value = flag as boolean;
+  });
+  emitter.on("resize-left-right-panels", (effects) => {
+    if ((effects as any).panel === "left") {
+      if ((effects as any).effectPanelSize < 600) {
+        showNavToolsBar.value = false;
+        return;
+      }
+    }
+    showNavToolsBar.value = true;
+  });
+  emitter.on("toggleTheme", () => {
+    base_container.value?.classList.toggle("dark");
+  });
+  emitter.on("leftFullScreen", (flag) => {
+    if (flag) {
+      (nav_bar_container.value as HTMLDivElement).style.width = "90%";
+    } else {
+      (nav_bar_container.value as HTMLDivElement).style.width = "60%";
+    }
+  });
+  // emitter.on("containerHight", (h) => {
+  //   (base_container.value as HTMLDivElement).style.height = `${h}vh`;
+  // });
+  emitter.on("caseswitched", async (casename) => {
+    await onCaseSwitched(casename as string);
+  });
+
+  emitter.on("contrastselected", (result) => {
+    const { contrastState, order } = result as any;
+    onContrastSelected(contrastState, order);
+  });
+
+  emitter.on("registerimagechanged", async (result) => {
+    await onRegistedStateChanged(result as boolean);
+  });
+}
 
 onMounted(async () => {
-  emitter.on("containerHight", (h) => {
-    console.log(h);
+  onEmitter();
 
-    (base_container.value as HTMLDivElement).style.height = `${h}vh`;
-    // (navBar.value as HTMLDivElement).style.height = `${60}px`;
-  });
   await getInitData();
   c_gui.value?.appendChild(gui.domElement);
 
@@ -164,21 +203,29 @@ onMounted(async () => {
     }
   );
 
-  nrrdTools = new Copper.NrrdTools(nrrd_c.value as HTMLDivElement);
+  nrrdTools = new Copper.NrrdTools(canvas_container.value as HTMLDivElement);
+  nrrdTools.setDisplaySliceIndexPanel(
+    slice_index_container.value as HTMLDivElement
+  );
   // for offline working
 
+  // nrrdTools.setBaseCanvasesSize(1.5);
   nrrdTools.setEraserUrls(eraserUrls);
+  nrrdTools.setPencilIconUrls(cursorUrls);
+  // nrrdTools.setMainAreaSize(3);
 
   // sphere plan b
   toolsState = nrrdTools.getNrrdToolsSettings();
   // toolsState.spherePlanB = false;
 
-  loadBarMain = Copper.loading();
+  loadBarMain = Copper.loading(loadingGif);
 
   loadingContainer = loadBarMain.loadingContainer;
   progress = loadBarMain.progress;
 
-  (nrrd_c.value as HTMLDivElement).appendChild(loadBarMain.loadingContainer);
+  (canvas_container.value as HTMLDivElement).appendChild(
+    loadBarMain.loadingContainer
+  );
 
   document.addEventListener("keydown", (e) => {
     if (e.code === "KeyF") {
@@ -187,16 +234,8 @@ onMounted(async () => {
   });
 
   setupGui();
-  loadModel("nrrd_tools");
+  setupCopperScene("nrrd_tools");
   appRenderer.animate();
-
-  emitter.on("leftFullScreen", (flag) => {
-    if (flag) {
-      (navBar.value as HTMLDivElement).style.width = "90%";
-    } else {
-      (navBar.value as HTMLDivElement).style.width = "60%";
-    }
-  });
 });
 
 async function getInitData() {
@@ -246,21 +285,7 @@ const resetMainAreaSize = (factor: number) => {
   nrrdTools.setMainAreaSize(factor);
 };
 
-worker.onmessage = async function (ev: MessageEvent) {
-  const result = ev.data;
-  const body = {
-    caseId: currentCaseId,
-    masks: result.masks as IStoredMasks,
-  };
-  let start_c: unknown = new Date();
-  await sendInitMask(body);
-  let end_c: unknown = new Date();
-  let timeDiff_c = (end_c as number) - (start_c as number);
-  console.log(`axios send Time taken: ${timeDiff_c}ms`);
-  console.log("send");
-};
-
-const sendInitMaskToBackend = () => {
+const sendInitMaskToBackend = async () => {
   // const masksData = nrrdTools.paintImages.z;
   const rawMaskData = nrrdTools.getMaskData();
   const masksData = {
@@ -274,9 +299,8 @@ const sendInitMaskToBackend = () => {
   const height = dimensions[1];
   const voxelSpacing = nrrdTools.getVoxelSpacing();
   const spaceOrigin = nrrdTools.getSpaceOrigin();
-
   if (len > 0) {
-    worker.postMessage({
+    const result = convertInitMaskData({
       masksData,
       len,
       width,
@@ -285,12 +309,21 @@ const sendInitMaskToBackend = () => {
       spaceOrigin,
       msg: "init",
     });
+    const body = {
+      caseId: currentCaseId,
+      masks: result.masks as IStoredMasks,
+    };
+    let start_c: unknown = new Date();
+    await sendInitMask(body);
+    let end_c: unknown = new Date();
+    let timeDiff_c = (end_c as number) - (start_c as number);
+    console.log(`axios send Time taken: ${timeDiff_c}ms`);
+    console.log("send");
   }
 };
 
 const loadJsonMasks = (url: string) => {
-  loadingContainer.style.display = "flex";
-  progress.innerText = "Loading masks data......";
+  switchAnimationStatus("flex", "Loading masks data......");
 
   const xhr = new XMLHttpRequest();
   xhr.open("GET", url, true);
@@ -298,13 +331,10 @@ const loadJsonMasks = (url: string) => {
   xhr.onload = function () {
     if (xhr.status === 200) {
       const data = xhr.response;
-      loadingContainer.style.display = "none";
       if (data === null) {
         console.log("data empty init");
-
         sendInitMaskToBackend();
       }
-
       nrrdTools.setMasksData(data, loadBarMain);
     }
   };
@@ -313,8 +343,6 @@ const loadJsonMasks = (url: string) => {
 
 const setMaskData = () => {
   if (loadedUrls[currentCaseId]) {
-    console.log(toolsState);
-
     if (cases.value) {
       const currentCaseDetail = findCurrentCase(
         cases.value.details,
@@ -328,11 +356,25 @@ const setMaskData = () => {
       }
     }
   }
+  setTimeout(() => {
+    // wait for loading mask, give a delay before user start operate
+    switchAnimationStatus("none");
+  }, 1000);
 };
 
 const switchAnimationStatus = (status: "flex" | "none", text?: string) => {
   loadingContainer.style.display = status;
   !!text && (progress.innerText = text);
+};
+
+const getSphereData = async (sphereOrigin: number[], sphereRadius: number) => {
+  const sphereData: ISaveSphere = {
+    caseId: currentCaseId,
+    sliceId: sphereOrigin[2],
+    sphereRadiusMM: sphereRadius,
+    sphereOriginMM: sphereOrigin,
+  };
+  await sendSaveSphere(sphereData);
 };
 
 const getMaskData = async (
@@ -404,10 +446,9 @@ watchEffect(() => {
 
       if (firstLoad) {
         nrrdTools.drag({
-          showNumber: true,
           getSliceNum,
         });
-        nrrdTools.draw({ getMaskData });
+        nrrdTools.draw({ getMaskData, getSphereData });
         nrrdTools.setupGUI(gui);
         scene?.addPreRenderCallbackFunction(nrrdTools.start);
         setUpGuiAfterLoading();
@@ -432,114 +473,38 @@ watchEffect(() => {
         }
       }
 
+      // send contrast name with states to NrrdImageCtl.vue
+      emitter.emit("setcontrastnames", selectedState);
+
       Copper.removeGuiFolderChilden(selectedContrastFolder);
       for (let i = 0; i < allSlices.length; i++) {
         let name = "";
         i === 0 ? (name = "pre") : (name = "contrast" + i);
         selectedContrastFolder.add(selectedState, name).onChange((flag) => {
-          if (flag) {
-            fileNum.value += 1;
-            nrrdTools.addSkip(i);
-          } else {
-            fileNum.value -= 1;
-            nrrdTools.removeSkip(i);
-          }
-          const maxNum = nrrdTools.getMaxSliceNum()[1];
-          if (maxNum) {
-            max.value = maxNum;
-            const { currentIndex, contrastIndex } =
-              nrrdTools.getCurrentSlicesNumAndContrastNum();
-
-            immediateSliceNum.value = currentIndex;
-            contrastNum.value = contrastIndex + 1;
-          }
+          onContrastSelected(flag, i);
         });
       }
     }
     setTimeout(() => {
       initSliceIndex.value = 0;
       filesCount.value = 0;
+      const guiSettings = nrrdTools.getGuiSettings();
+      emitter.emit("finishloadcases", guiSettings);
     }, 1000);
     firstLoad = false;
     loadCases = false;
   }
 });
 
-async function loadModel(name: string) {
+async function setupCopperScene(name: string) {
   scene = appRenderer.getSceneByName(name) as Copper.copperScene;
   if (scene == undefined) {
     scene = appRenderer.createScene(name) as Copper.copperScene;
     if (scene) {
       appRenderer.setCurrentScene(scene);
     }
-
-    if ((cases.value?.names as string[]).length > 0) {
-      if (cases.value?.names) {
-        switchAnimationStatus("flex", "Prepare Nrrd files, please wait......");
-        currentCaseId = cases.value?.names[0];
-        const details = cases.value?.details;
-
-        const requests = findRequestUrls(
-          details,
-          currentCaseId,
-          "registration"
-        );
-
-        await getNrrdAndJsonFileUrls(requests);
-
-        if (caseUrls.value) {
-          urls = caseUrls.value.nrrdUrls;
-          // every time switch cases, we store it
-          loadedUrls[currentCaseId] = caseUrls.value;
-          emitter.emit("casename", {
-            currentCaseId,
-            details,
-            maskNrrd: urls[1],
-          });
-        }
-        loadAllNrrds(urls, "registration");
-      }
-    }
   }
 }
-
-const findRequestUrls = (
-  details: Array<IDetails>,
-  caseId: string,
-  type: "registration" | "origin"
-) => {
-  const currentCaseDetails = details.filter((item) => item.name === caseId)[0];
-  const requests: Array<IRequests> = [];
-  if (type === "registration") {
-    currentCaseDetails.file_paths.registration_nrrd_paths.forEach(
-      (filepath) => {
-        requests.push({
-          url: "/single-file",
-          params: { path: filepath },
-        });
-      }
-    );
-  } else if (type === "origin") {
-    currentCaseDetails.file_paths.origin_nrrd_paths.forEach((filepath) => {
-      requests.push({
-        url: "/single-file",
-        params: { path: filepath },
-      });
-    });
-  }
-
-  if (currentCaseDetails.masked) {
-    currentCaseDetails.file_paths.segmentation_manual_mask_paths.forEach(
-      (filepath) => {
-        requests.push({
-          url: "/single-file",
-          params: { path: filepath },
-        });
-      }
-    );
-  }
-  return requests;
-};
 
 const loadAllNrrds = (
   urls: Array<string>,
@@ -601,75 +566,161 @@ const loadAllNrrds = (
   }
 };
 
+/**
+ *
+ * @param flag [boolean] the effect contrast state, true: add, flase: remove
+ * @param i [number] the effect contrast order number
+ */
+
+function onContrastSelected(flag: boolean, i: number) {
+  if (flag) {
+    fileNum.value += 1;
+    nrrdTools.addSkip(i);
+  } else {
+    fileNum.value -= 1;
+    nrrdTools.removeSkip(i);
+  }
+  const maxNum = nrrdTools.getMaxSliceNum()[1];
+  if (maxNum) {
+    max.value = maxNum;
+    const { currentIndex, contrastIndex } =
+      nrrdTools.getCurrentSlicesNumAndContrastNum();
+
+    immediateSliceNum.value = currentIndex;
+    contrastNum.value = contrastIndex + 1;
+  }
+}
+
+async function onCaseSwitched(casename: string) {
+  switchAnimationStatus("flex", "Saving masks data, please wait......");
+  // revoke the regsiter images
+  if (!!originUrls.value && originUrls.value.nrrdUrls.length > 0) {
+    revokeRegisterNrrdImages(originUrls.value.nrrdUrls);
+    originUrls.value.nrrdUrls.length = 0;
+  }
+  originAllSlices.length = 0;
+  defaultRegAllSlices.length = 0;
+  originAllMeshes.length = 0;
+  defaultRegAllMeshes.length = 0;
+  // temprary disable this function
+  revokeAppUrls(loadedUrls);
+  loadedUrls = {};
+
+  currentCaseId = casename;
+  await getInitData();
+
+  if (loadedUrls[casename]) {
+    switchAnimationStatus(
+      "flex",
+      "Prepare and Loading masks data, please wait......"
+    );
+    URL.revokeObjectURL(loadedUrls[casename].jsonUrl);
+    await getMaskDataBackend(casename);
+    loadedUrls[casename].jsonUrl = maskBackend.value;
+    urls = loadedUrls[casename].nrrdUrls;
+    if (!!caseUrls.value) {
+      caseUrls.value.nrrdUrls = urls;
+    }
+  } else {
+    switchAnimationStatus("flex", "Prepare Nrrd files, please wait......");
+    // await getCaseFileUrls(value);
+
+    const requests = findRequestUrls(
+      cases.value?.details as Array<IDetails>,
+      currentCaseId,
+      "registration"
+    );
+    await getNrrdAndJsonFileUrls(requests);
+
+    if (!!caseUrls.value) {
+      urls = caseUrls.value.nrrdUrls;
+      loadedUrls[currentCaseId] = caseUrls.value;
+      const details = cases.value?.details;
+      emitter.emit("casename", {
+        currentCaseId,
+        details,
+        maskNrrd: urls[1],
+      });
+    }
+  }
+
+  readyToLoad(urls, "registration");
+  loadCases = true;
+}
+
+async function onRegistedStateChanged(isShowRegisterImage: boolean) {
+  switchRegCheckBoxStatus(regCkeckbox.domElement, "none", "0.5");
+  loadOrigin = true;
+  switchAnimationStatus("flex", "Prepare and Loading data, please wait......");
+  if (!isShowRegisterImage) {
+    if (originAllSlices.length > 0) {
+      allSlices = [...originAllSlices];
+      allLoadedMeshes = [...originAllMeshes];
+      filesCount.value = 5;
+      emitter.emit("showRegBtnToRight", {
+        maskNrrdMeshes: originAllMeshes[1],
+        maskSlices: originAllSlices[1],
+        url: urls[1],
+        register: isShowRegisterImage,
+      });
+      return;
+    }
+
+    const reQuestInfo: IRegRquest = {
+      name: currentCaseId,
+      radius: toolsState?.sphereRadius,
+      origin: toolsState?.sphereOrigin.z,
+    };
+
+    if (
+      !(!!originUrls.value?.nrrdUrls && originUrls.value?.nrrdUrls.length > 0)
+    ) {
+      const requests = findRequestUrls(
+        cases.value?.details as Array<IDetails>,
+        reQuestInfo.name,
+        "origin"
+      );
+      await getNrrdAndJsonFileUrls(requests);
+      originUrls.value = caseUrls.value as ICaseUrls;
+    }
+    if (!!originUrls.value?.nrrdUrls && originUrls.value?.nrrdUrls.length > 0) {
+      urls = originUrls.value.nrrdUrls;
+      readyToLoad(urls, "origin")?.then((data) => {
+        emitter.emit("showRegBtnToRight", {
+          maskNrrdMeshes: data.meshes[1],
+          maskSlices: data.slices[1],
+          url: urls[1],
+          register: isShowRegisterImage,
+        });
+      });
+    }
+  } else {
+    if (defaultRegAllSlices.length > 0) {
+      allSlices = [...defaultRegAllSlices];
+      allLoadedMeshes = [...defaultRegAllMeshes];
+      emitter.emit("showRegBtnToRight", {
+        maskNrrdMeshes: defaultRegAllMeshes[1],
+        maskSlices: defaultRegAllSlices[1],
+        url: urls[1],
+        register: isShowRegisterImage,
+      });
+      filesCount.value = 5;
+      return;
+    }
+    if (caseUrls.value) {
+      urls = caseUrls.value.nrrdUrls;
+      readyToLoad(urls, "registration");
+    }
+  }
+}
+
 function setupGui() {
   state.switchCase = cases.value?.names[0] as string;
-  gui
-    .add(state, "introduction")
-    .name("Intro Panel")
-    .onChange((flag) => {
-      // flag
-      //   ? ((intro.value as HTMLDivElement).style.display = "flex")
-      //   : ((intro.value as HTMLDivElement).style.display = "none");
-      showIntro.value = flag;
-    });
 
   gui
     .add(state, "switchCase", cases.value?.names as string[])
     .onChange(async (caseId) => {
-      switchAnimationStatus("flex", "Saving masks data, please wait......");
-      // revoke the regsiter images
-      if (!!originUrls.value && originUrls.value.nrrdUrls.length > 0) {
-        revokeRegisterNrrdImages(originUrls.value.nrrdUrls);
-        originUrls.value.nrrdUrls.length = 0;
-      }
-      originAllSlices.length = 0;
-      defaultRegAllSlices.length = 0;
-      originAllMeshes.length = 0;
-      defaultRegAllMeshes.length = 0;
-      // temprary disable this function
-      revokeAppUrls(loadedUrls);
-      loadedUrls = {};
-
-      currentCaseId = caseId;
-      await getInitData();
-
-      if (loadedUrls[caseId]) {
-        switchAnimationStatus(
-          "flex",
-          "Prepare and Loading masks data, please wait......"
-        );
-        URL.revokeObjectURL(loadedUrls[caseId].jsonUrl);
-        await getMaskDataBackend(caseId);
-        loadedUrls[caseId].jsonUrl = maskBackend.value;
-        urls = loadedUrls[caseId].nrrdUrls;
-        if (!!caseUrls.value) {
-          caseUrls.value.nrrdUrls = urls;
-        }
-      } else {
-        switchAnimationStatus("flex", "Prepare Nrrd files, please wait......");
-        // await getCaseFileUrls(value);
-
-        const requests = findRequestUrls(
-          cases.value?.details as Array<IDetails>,
-          currentCaseId,
-          "registration"
-        );
-        await getNrrdAndJsonFileUrls(requests);
-
-        if (!!caseUrls.value) {
-          urls = caseUrls.value.nrrdUrls;
-          loadedUrls[currentCaseId] = caseUrls.value;
-          const details = cases.value?.details;
-          emitter.emit("casename", {
-            currentCaseId,
-            details,
-            maskNrrd: urls[1],
-          });
-        }
-      }
-
-      readyToLoad(urls, "registration");
-      loadCases = true;
+      await onCaseSwitched(caseId);
       setUpGuiAfterLoading();
     });
 
@@ -691,75 +742,7 @@ function setUpGuiAfterLoading() {
       return;
     }
 
-    switchRegCheckBoxStatus(regCkeckbox.domElement, "none", "0.5");
-    loadOrigin = true;
-    switchAnimationStatus(
-      "flex",
-      "Prepare and Loading data, please wait......"
-    );
-    if (!state.showRegisterImages) {
-      if (originAllSlices.length > 0) {
-        allSlices = [...originAllSlices];
-        allLoadedMeshes = [...originAllMeshes];
-        filesCount.value = 5;
-        emitter.emit("showRegBtnToRight", {
-          maskNrrdMeshes: originAllMeshes[1],
-          maskSlices: originAllSlices[1],
-          url: urls[1],
-          register: state.showRegisterImages,
-        });
-        return;
-      }
-
-      const reQuestInfo: IRegRquest = {
-        name: currentCaseId,
-        radius: toolsState?.sphereRadius,
-        origin: toolsState?.sphereOrigin.z,
-      };
-
-      if (
-        !(!!originUrls.value?.nrrdUrls && originUrls.value?.nrrdUrls.length > 0)
-      ) {
-        const requests = findRequestUrls(
-          cases.value?.details as Array<IDetails>,
-          reQuestInfo.name,
-          "origin"
-        );
-        await getNrrdAndJsonFileUrls(requests);
-        originUrls.value = caseUrls.value as ICaseUrls;
-      }
-      if (
-        !!originUrls.value?.nrrdUrls &&
-        originUrls.value?.nrrdUrls.length > 0
-      ) {
-        urls = originUrls.value.nrrdUrls;
-        readyToLoad(urls, "origin")?.then((data) => {
-          emitter.emit("showRegBtnToRight", {
-            maskNrrdMeshes: data.meshes[1],
-            maskSlices: data.slices[1],
-            url: urls[1],
-            register: state.showRegisterImages,
-          });
-        });
-      }
-    } else {
-      if (defaultRegAllSlices.length > 0) {
-        allSlices = [...defaultRegAllSlices];
-        allLoadedMeshes = [...defaultRegAllMeshes];
-        emitter.emit("showRegBtnToRight", {
-          maskNrrdMeshes: defaultRegAllMeshes[1],
-          maskSlices: defaultRegAllSlices[1],
-          url: urls[1],
-          register: state.showRegisterImages,
-        });
-        filesCount.value = 5;
-        return;
-      }
-      if (caseUrls.value) {
-        urls = caseUrls.value.nrrdUrls;
-        readyToLoad(urls, "registration");
-      }
-    }
+    await onRegistedStateChanged(state.showRegisterImages);
   });
   optsGui.add(state, "release");
   optsGui.closed = false;
@@ -782,6 +765,7 @@ function switchRegCheckBoxStatus(
 #bg {
   width: 100%;
   /* height: 100vh; */
+  flex: 0 0 90%;
   overflow: hidden;
   position: relative;
   /* border: 1px solid palevioletred; */
@@ -797,7 +781,7 @@ function switchRegCheckBoxStatus(
   -ms-user-select: none;
   user-select: none;
 }
-.nrrd_c {
+.canvas_container {
   /* position: fixed; */
   position: absolute;
   width: 100%;
@@ -807,7 +791,8 @@ function switchRegCheckBoxStatus(
   align-items: center;
 }
 
-.navBar {
+.nav_bar_container {
+  flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -815,7 +800,6 @@ function switchRegCheckBoxStatus(
 }
 
 .copper3d_sliceNumber {
-  /* position: fixed !important; */
   position: relative;
   width: 300px;
   text-align: center;
@@ -823,22 +807,31 @@ function switchRegCheckBoxStatus(
   right: 1% !important;
   left: 0px !important;
   margin: 0 auto;
-  border: 1px solid salmon;
+  border: 3px solid salmon;
   border-radius: 10px;
   padding: 5px;
-  /* color: crimson; */
   font-size: 0.9em;
   font-weight: 700;
   color: rgba(26, 26, 26, 0.965);
   cursor: no-drop;
   transition: border-color 0.25s;
 }
+
 .copper3d_sliceNumber:hover {
   border-color: #eb4a05;
 }
 .copper3d_sliceNumber:focus,
 .copper3d_sliceNumber:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
+}
+
+.dark .copper3d_sliceNumber {
+  border: 3px solid #009688;
+  color: #fff8ec;
+}
+
+.dark .copper3d_sliceNumber:hover {
+  border-color: #4db6ac;
 }
 
 .copper3D_scene_div {

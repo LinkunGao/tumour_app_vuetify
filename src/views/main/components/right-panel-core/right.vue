@@ -1,8 +1,10 @@
 <template>
   <div id="bg_2" ref="bg">
-    <div v-show="openLoading" ref="loading_c" class="loading"></div>
-    <div class="value-panel">
-      <div>
+    <div v-show="openLoading" ref="loading_c" class="loading">
+      <div class="loading_text text-cyan-darken-3">Load tumour model...</div>
+    </div>
+    <v-card class="value-panel mt-1 ml-1" color="right-display-panel">
+      <div color="primary">
         <span>Tumour volume:</span> <span>{{ volume }} cm<sup>3</sup></span>
       </div>
       <div><span>Tumour extent:</span> <span>71 mm</span></div>
@@ -14,7 +16,8 @@
       <div class="nipple">
         <span></span> <span>{{ nippleClock }}</span>
       </div>
-    </div>
+    </v-card>
+    <div></div>
     <div ref="c_gui" id="gui"></div>
     <Drawer
       @on-view-single-click="handleViewSigleClick"
@@ -26,12 +29,12 @@
 <script setup lang="ts">
 import { GUI } from "dat.gui";
 import * as THREE from "three";
-// import * as Copper from "copper3d";
-// import "copper3d/dist/css/style.css";
+import * as Copper from "copper3d";
+import "copper3d/dist/css/style.css";
 // import createKDTree from "copper3d-tree";
-import * as Copper from "@/ts/index";
+// import * as Copper from "@/ts/index";
 import { getCurrentInstance, onMounted, ref } from "vue";
-import Drawer from "@/components/tools/drawer.vue";
+import Drawer from "@/components/commonBar/drawer.vue";
 import emitter from "@/plugins/bus";
 import { storeToRefs } from "pinia";
 import {
@@ -51,6 +54,7 @@ import {
   getClosestNipple,
 } from "@/views/main/components/tools";
 import { PanelOperationManager, valideClock, deepClone } from "./utils-right";
+import loadingGif from "@/assets/loading.svg";
 
 let refs = null;
 let bg = ref<HTMLDivElement>();
@@ -109,15 +113,13 @@ const { nipplePoints } = storeToRefs(useNipplePointsStore());
 const { getNipplePoints } = useNipplePointsStore();
 
 onMounted(() => {
-  emitter.on("containerHight", (h) => {
-    (bg.value as HTMLDivElement).style.height = `${h}vh`;
-  });
+  onEmitter();
   let { $refs } = (getCurrentInstance() as any).proxy;
   refs = $refs;
   // bg = refs.base_container_2;
   c_gui = refs.c_gui;
 
-  loadBarMain = Copper.loading();
+  loadBarMain = Copper.loading(loadingGif);
 
   loadingContainer = loadBarMain.loadingContainer;
   (loading_c.value as HTMLDivElement).appendChild(loadingContainer);
@@ -158,12 +160,19 @@ onMounted(() => {
   });
   panelOperator = new PanelOperationManager(bg.value as HTMLDivElement);
 
-  loadBar1 = Copper.loading();
+  loadBar1 = Copper.loading(loadingGif);
 
   // appRenderer.container.appendChild(loadBar1.loadingContainer);
 
   initScene("display_nrrd");
 
+  appRenderer.animate();
+});
+
+function onEmitter() {
+  emitter.on("containerHight", (h) => {
+    (bg.value as HTMLDivElement).style.height = `${h}vh`;
+  });
   emitter.on("saveMesh", () => {
     loadingContainer.style.display = "flex";
     openLoading.value = true;
@@ -281,8 +290,13 @@ onMounted(() => {
     // console.timeEnd()
     // resetSliceIndex(updateIndex)
   });
-  appRenderer.animate();
-});
+
+  emitter.on("resize-left-right-panels", () => {
+    setTimeout(() => {
+      copperScene?.onWindowResize();
+    }, 100);
+  });
+}
 
 // async function getMaskNrrdHandle() {
 //   if (casename) {
@@ -321,13 +335,7 @@ function initScene(name: string) {
     controls.rotateSpeed = 3.0;
 
     copperScene.loadViewUrl("/nrrd_view.json");
-    emitter.on("resize", () => {
-      console.log();
 
-      setTimeout(() => {
-        copperScene?.onWindowResize();
-      }, 100);
-    });
     // copperScene.updateBackground("#8b6d96", "#18e5e5");
     // Copper.setHDRFilePath("venice_sunset_1k.hdr");
     // appRenderer.updateEnvironment();
@@ -630,7 +638,7 @@ const handleViewsDoubleClick = (view: string) => {
 
 <style scoped>
 #bg_2 {
-  width: 100%;
+  width: 95%;
   height: 100%;
   position: relative;
   display: flex;
@@ -651,8 +659,12 @@ const handleViewsDoubleClick = (view: string) => {
   width: 100%;
   height: 100%;
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
+}
+.loading_text {
+  order: 3;
 }
 .value-panel {
   position: absolute;
@@ -660,8 +672,8 @@ const handleViewsDoubleClick = (view: string) => {
   top: 0px;
   width: 200px;
   height: 150px;
-  background-color: rgba(0, 0, 0, 0.7);
-  border: 1px solid black;
+  background-color: rgba(0, 0, 0, 0.2);
+  border: 2px solid rgba(0, 0, 0, 0.7);
   border-radius: 10px;
   padding: 10px 15px;
   font-size: smaller;
@@ -669,6 +681,7 @@ const handleViewsDoubleClick = (view: string) => {
   /* align-items: center; */
   /* justify-content: center; */
 }
+
 .value-panel > div {
   display: flex;
   align-items: center;

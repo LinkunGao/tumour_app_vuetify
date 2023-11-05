@@ -1,32 +1,39 @@
 <template>
   <div>
-    <v-container>
-      <v-row style="height: 60px">
-        <v-col cols="4" class="d-flex justify-center align-center">
-          Debug:
-        </v-col>
-        <v-col cols="8" class="d-flex justify-center align-center">
-          <v-switch
-            v-model="debugMode"
-            color="secondary"
-            hide-details
-            class="ml-5"
-            @update:model-value="toggleDebug"
-          ></v-switch>
-        </v-col>
-      </v-row>
-    </v-container>
+    <Switcher
+      :title="'Debug Mode'"
+      :label="switchDebugLabel"
+      v-model:controller="debugMode"
+      @toggleUpdate="toggleDebug"
+    />
+    <Switcher
+      :title="'Sticky Tool Settings Bar'"
+      :label="switchStickyLabel"
+      v-model:controller="stickMode"
+      @toggleUpdate="toggleSticky"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
+import Switcher from "@/components/commonBar/Switcher.vue";
 import { ref } from "vue";
 import emitter from "@/plugins/bus";
 
 const debugMode = ref(false);
+const switchDebugLabel = ref("off");
 
-function toggleDebug(value: any) {
-  emitter.emit("show-intro-panel", value);
+const stickMode = ref(false);
+const switchStickyLabel = ref("off");
+
+function toggleDebug(value: boolean) {
+  switchDebugLabel.value = switchDebugLabel.value === "on" ? "off" : "on";
+  emitter.emit("show_debug_mode", value);
+}
+
+function toggleSticky(value: boolean) {
+  switchStickyLabel.value = switchStickyLabel.value === "on" ? "off" : "on";
+  emitter.emit("set_nav_sticky_mode", value);
 }
 </script>
 

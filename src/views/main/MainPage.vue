@@ -17,7 +17,7 @@
 
     <div
       v-show="!leftFullScreen"
-      class="box bg-surface mr-1 my-1 mt-2 rounded"
+      class="box box_right bg-surface mr-1 my-1 mt-2 rounded"
       ref="right_container"
       @dblclick.stop="togglePanelActive('right', $event)"
     >
@@ -27,11 +27,11 @@
 </template>
 
 <script lang="ts" setup>
-import MainArea from "@/views/main/components/MainArea.vue";
 import LeftPanel from "./components/left-panel-core/left.vue";
 import RightPanel from "./components/right-panel-core/right.vue";
 import { ref, onMounted } from "vue";
 import emitter from "@/plugins/bus";
+import { throttle } from "./components/tools";
 
 const mainContainer = ref<HTMLDivElement>();
 const splitBar = ref<HTMLDivElement>();
@@ -44,16 +44,17 @@ const ignoreElements = ["INPUT", "I", "svg", "path"];
 
 let isDragging = false;
 onMounted(() => {
-  const initHeight = mainContainer.value?.clientHeight as number;
-  const h = ((initHeight - 80 - 100) / initHeight) * 100;
+  // const initHeight = mainContainer.value?.clientHeight as number;
+  // const h = ((initHeight - 60 - 100) / initHeight) * 100;
+  // // set container height
+  // emitter.emit("containerHight", h);
+  // (mainContainer.value as HTMLDivElement).style.height = (
+  //   splitBar.value as HTMLDivElement
+  // ).style.height = `${((initHeight - 80) / initHeight) * 100}vh`;
 
-  emitter.emit("containerHight", h);
-  (mainContainer.value as HTMLDivElement).style.height = `${
-    ((initHeight - 80) / initHeight) * 100
-  }vh`;
   splitBar.value?.addEventListener("mousedown", function (e) {
     isDragging = true;
-    document.addEventListener("mousemove", moveSplitLine);
+    document.addEventListener("mousemove", throttle(moveSplitLine, 80));
   });
 
   document.addEventListener("mouseup", function (e) {
@@ -78,7 +79,10 @@ function moveSplitLine(e: MouseEvent) {
     // }
     (mainContainer.value as HTMLDivElement).style.gridTemplateColumns =
       percent - 1 + "% 1%" + (100 - percent) + "%";
-    emitter.emit("resize", true);
+    emitter.emit("resize-left-right-panels", {
+      effectPanelSize: left_container.value?.clientWidth,
+      panel: "left",
+    });
   }
 }
 
@@ -89,15 +93,21 @@ function togglePanelActive(panel: string, e: MouseEvent) {
     case "left":
       leftFullScreen.value = !leftFullScreen.value;
       left_container.value?.classList.toggle("panel_active");
-      // emitter.emit("leftFullScreen", leftFullScreen.value);
+      emitter.emit("resize-left-right-panels", {
+        effectPanelSize: left_container.value?.clientWidth,
+        panel: "left",
+      });
 
       break;
     case "right":
       rightFullScreen.value = !rightFullScreen.value;
       right_container.value?.classList.toggle("panel_active");
+      emitter.emit("resize-left-right-panels", {
+        effectPanelSize: right_container.value?.clientWidth,
+        panel: "right",
+      });
       break;
   }
-  emitter.emit("resize", true);
 }
 </script>
 
@@ -113,7 +123,14 @@ function togglePanelActive(panel: string, e: MouseEvent) {
 }
 
 .box {
-  height: 100%;
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 80px);
+}
+.box_right {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .panel_active {
   width: 100%;

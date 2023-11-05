@@ -1,31 +1,27 @@
 import * as Copper from "copper3d";
-
 export interface INrrdCaseNames {
   names: string[];
   details: Array<IDetails>;
   [proName: string]: any;
 }
-
 export interface IDetails {
   name: string;
   masked: false;
-  has_mesh:boolean;
+  has_mesh: boolean;
   file_paths: {
     origin_nrrd_paths: string[];
     registration_nrrd_paths: string[];
     segmentation_nipple_paths: string[];
     segmentation_manual_mask_paths: string[];
     segmentation_manual_3dobj_paths: string[];
-  }
+  };
 }
-
-export interface IStoredMasks{
+export interface IStoredMasks {
   label1: IExportMask[];
   label2: IExportMask[];
   label3: IExportMask[];
-  hasData:false;
+  hasData: false;
 }
-
 export interface IExportMask {
   caseId?: number;
   sliceIndex?: number;
@@ -37,29 +33,30 @@ export interface IExportMask {
   data?: number[];
   [proName: string]: any;
 }
-
 export interface IExportMasks {
   caseId: string;
   masks: IStoredMasks;
 }
-
 export interface IReplaceMask {
   caseId: string;
   sliceId: number;
-  label:string;
+  label: string;
   mask: number[];
 }
-
+export interface ISaveSphere {
+  caseId: string;
+  sliceId: number;
+  sphereRadiusMM: number;
+  sphereOriginMM: number[];
+}
 export interface IMaskMesh {
   maskMeshObjUrl?: string;
-  meshVolume?:number;
+  meshVolume?: number;
 }
-
 export interface IParams {
   params: unknown;
   responseType?: string;
 }
-
 export interface ICaseUrls {
   nrrdUrls: Array<string>;
   jsonUrl?: string;
@@ -67,52 +64,44 @@ export interface ICaseUrls {
 export interface ICaseRegUrls {
   nrrdUrls: Array<string>;
 }
-
 export interface ILoadUrls {
   [proName: string]: any;
 }
-
-export interface ICaseDetails{
-  currentCaseId:string;
-  details:Array<IDetails>;
-  maskNrrd:string
+export interface ICaseDetails {
+  currentCaseId: string;
+  details: Array<IDetails>;
+  maskNrrd: string;
 }
-
-export interface IRegRquest{
-  name:string,
-  radius?: number,
-  origin?: number[]
+export interface IRegRquest {
+  name: string;
+  radius?: number;
+  origin?: number[];
 }
-
-export interface ILoadedMeshes{
-  x:THREE.Mesh;
-  y:THREE.Mesh;
-  z:THREE.Mesh;
-  order:number;
+export interface ILoadedMeshes {
+  x: THREE.Mesh;
+  y: THREE.Mesh;
+  z: THREE.Mesh;
+  order: number;
 }
-
 export interface ISliceIndex {
-  x:number;
-  y:number;
-  z:number;
+  x: number;
+  y: number;
+  z: number;
 }
-
-export interface ILeftRightData{
-  maskNrrdMeshes:Copper.nrrdMeshesType; 
-  maskSlices:Copper.nrrdSliceType; 
-  url:string;
-  register:boolean;
+export interface ILeftRightData {
+  maskNrrdMeshes: Copper.nrrdMeshesType;
+  maskSlices: Copper.nrrdSliceType;
+  url: string;
+  register: boolean;
 }
-
-export interface INipplePoints{
+export interface INipplePoints {
   nodes: {
-    right_nipple: number[],
-    left_nipple: number[]
-  },
-  elements: {}
+    right_nipple: number[];
+    left_nipple: number[];
+  };
+  elements: {};
 }
-
-export interface IRequests{
-  url:string;
-  params:any;
+export interface IRequests {
+  url: string;
+  params: any;
 }

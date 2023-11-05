@@ -6,11 +6,11 @@ import {
   ICaseRegUrls,
   IExportMasks,
   IReplaceMask,
+  ISaveSphere,
   IRegRquest,
   IRequests,
 } from "@/models/apiTypes";
 import JSZip from "jszip";
-
 /**
  *
  * @returns Get all cases's names
@@ -19,7 +19,6 @@ export async function useNrrdCaseNames() {
   const names = http.get<INrrdCaseNames>("/cases");
   return names;
 }
-
 /**
  *
  */
@@ -43,13 +42,11 @@ export async function useNrrdCaseFiles(requests: Array<IRequests>) {
       });
   });
 }
-
 /**
  *
  * @param name case name/id
  * @returns Get all nrrd files in the case folder
  */
-
 export async function useNrrdCase(name: string): Promise<ICaseUrls> {
   return new Promise((resolve, reject) => {
     let urls: ICaseUrls = { nrrdUrls: [], jsonUrl: "" };
@@ -66,7 +63,6 @@ export async function useNrrdCase(name: string): Promise<ICaseUrls> {
             jsonName = prop;
           }
         }
-
         const promises: any = [];
         nrrdNames.forEach((name) => {
           const file = contents.files[name];
@@ -85,7 +81,6 @@ export async function useNrrdCase(name: string): Promise<ICaseUrls> {
                 urls.nrrdUrls.push(URL.createObjectURL(new Blob([item])));
               }
             });
-
             resolve(urls);
           })
           .catch((err) => {
@@ -95,7 +90,6 @@ export async function useNrrdCase(name: string): Promise<ICaseUrls> {
     });
   });
 }
-
 /**
  * init the mask data in backend
  * @param body
@@ -105,7 +99,6 @@ export async function useInitMasks(body: IExportMasks) {
   const success = http.post<boolean>("/mask/init", body);
   return success;
 }
-
 /**
  * replace the specific mask
  * @param body
@@ -115,17 +108,23 @@ export async function useReplaceMask(body: IReplaceMask) {
   const success = http.post<boolean>("/mask/replace", body);
   return success;
 }
-
+/**
+ * sava sphere origin and raduis in mm
+ * @param body
+ * @returns
+ */
+export async function useSaveSphere(body: ISaveSphere) {
+  const success = http.post<boolean>("/sphere/save", body);
+  return success;
+}
 /**
  * Save mask
  * @returns
  */
-
 export async function useSaveMasks(name: string) {
   const success = http.get<boolean>("/mask/save", { name });
   return success;
 }
-
 export async function useMask(name: string) {
   return new Promise((resolve, reject) => {
     http
@@ -141,7 +140,6 @@ export async function useMask(name: string) {
       });
   });
 }
-
 export async function useNipplePointsJson(name: string) {
   return new Promise((resolve, reject) => {
     http
@@ -154,7 +152,6 @@ export async function useNipplePointsJson(name: string) {
       });
   });
 }
-
 export async function useMaskNrrd(name: string) {
   return new Promise((resolve, reject) => {
     http
@@ -168,7 +165,6 @@ export async function useMaskNrrd(name: string) {
       });
   });
 }
-
 export async function useMaskObjMesh(name: string) {
   return new Promise((resolve, reject) => {
     http
@@ -189,12 +185,10 @@ export async function useMaskObjMesh(name: string) {
       });
   });
 }
-
 export async function useClearMaskMesh(name: string) {
   let res = http.get<string>("/clearmesh", { name });
   return res;
 }
-
 export async function useNrrdRegisterCase(
   requestInfo: IRegRquest
 ): Promise<ICaseUrls> {
@@ -207,7 +201,6 @@ export async function useNrrdRegisterCase(
       });
   });
 }
-
 export async function useNrrdOriginCase(name: string): Promise<ICaseUrls> {
   return new Promise((resolve, reject) => {
     let urls: ICaseRegUrls = { nrrdUrls: [] };
@@ -216,7 +209,6 @@ export async function useNrrdOriginCase(name: string): Promise<ICaseUrls> {
     });
   });
 }
-
 function unzipNrrdFiles(
   zipBlob: any,
   urls: ICaseRegUrls,
