@@ -6,7 +6,7 @@
       ref="left_container"
       @dblclick.stop="togglePanelActive('left', $event)"
     >
-      <LeftPanel />
+      <LeftPanel :panel-width="leftPanelWidth" />
     </div>
     <div class="d-flex justify-center align-center" ref="splitBar">
       <div
@@ -21,7 +21,7 @@
       ref="right_container"
       @dblclick.stop="togglePanelActive('right', $event)"
     >
-      <RightPanel />
+      <RightPanel :panel-width="rightPanelWidth" />
     </div>
   </div>
 </template>
@@ -41,20 +41,17 @@ const right_container = ref<HTMLDivElement>();
 let leftFullScreen = ref(false);
 let rightFullScreen = ref(false);
 const ignoreElements = ["INPUT", "I", "svg", "path"];
+const leftPanelWidth = ref(1000);
+const rightPanelWidth = ref(600);
 
 let isDragging = false;
+let nav_sticky = false;
 onMounted(() => {
-  // const initHeight = mainContainer.value?.clientHeight as number;
-  // const h = ((initHeight - 60 - 100) / initHeight) * 100;
-  // // set container height
-  // emitter.emit("containerHight", h);
-  // (mainContainer.value as HTMLDivElement).style.height = (
-  //   splitBar.value as HTMLDivElement
-  // ).style.height = `${((initHeight - 80) / initHeight) * 100}vh`;
+  manageEmitters();
 
   splitBar.value?.addEventListener("mousedown", function (e) {
     isDragging = true;
-    document.addEventListener("mousemove", throttle(moveSplitLine, 80));
+    document.addEventListener("mousemove", throttle(moveSplitLine, 100));
   });
 
   document.addEventListener("mouseup", function (e) {
@@ -63,26 +60,58 @@ onMounted(() => {
   });
 });
 
+function manageEmitters() {
+  emitter.on("set_nav_sticky_mode", (val) => {
+    nav_sticky = val as boolean;
+    if (val && left_container.value?.classList.contains("panel_active")) {
+      left_container.value?.classList.add("nav_panel_active");
+    } else if (
+      val &&
+      right_container.value?.classList.contains("panel_active")
+    ) {
+      right_container.value?.classList.add("nav_panel_active");
+    } else {
+      left_container.value?.classList.remove("nav_panel_active");
+      right_container.value?.classList.remove("nav_panel_active");
+    }
+  });
+}
+
 function moveSplitLine(e: MouseEvent) {
   if (isDragging) {
     const containerRect = (
       mainContainer.value as HTMLDivElement
     ).getBoundingClientRect();
-    const mousePosition = e.clientX - containerRect.left;
+    let clientX = e.clientX;
+    if (nav_sticky) {
+      clientX = e.clientX + 350;
+    }
+    const mousePosition = clientX - containerRect.left;
 
     const minLeft = containerRect.left;
     const maxLeft =
       containerRect.right - (splitBar.value as HTMLDivElement).offsetWidth;
-    const percent = ((mousePosition - minLeft) / (maxLeft - minLeft)) * 100;
+    let percent = ((mousePosition - minLeft) / (maxLeft - minLeft)) * 100;
     // if (percent < 0 || percent > 100) {
     //   return;
     // }
-    (mainContainer.value as HTMLDivElement).style.gridTemplateColumns =
-      percent - 1 + "% 1%" + (100 - percent) + "%";
-    emitter.emit("resize-left-right-panels", {
-      effectPanelSize: left_container.value?.clientWidth,
-      panel: "left",
-    });
+    if (percent < 10) {
+      percent = 1;
+      (mainContainer.value as HTMLDivElement).style.gridTemplateColumns =
+        percent - 1 + "% 1%" + (100 - percent) + "%";
+    } else if (percent > 90) {
+      percent = 100;
+      (mainContainer.value as HTMLDivElement).style.gridTemplateColumns =
+        percent - 1 + "% 1%" + (100 - percent) + "%";
+    } else {
+      (mainContainer.value as HTMLDivElement).style.gridTemplateColumns =
+        percent - 1 + "% 1%" + (100 - percent) + "%";
+    }
+
+    leftPanelWidth.value = left_container.value?.getBoundingClientRect()
+      .width as number;
+    rightPanelWidth.value = right_container.value?.getBoundingClientRect()
+      .width as number;
   }
 }
 
@@ -92,9 +121,22 @@ function togglePanelActive(panel: string, e: MouseEvent) {
   switch (panel) {
     case "left":
       leftFullScreen.value = !leftFullScreen.value;
+
       left_container.value?.classList.toggle("panel_active");
+      if (!left_container.value?.classList.contains("panel_active")) {
+        left_container.value?.classList.remove("nav_panel_active");
+      } else {
+        if (
+          nav_sticky &&
+          !left_container.value?.classList.contains("nav_panel_active")
+        ) {
+          left_container.value?.classList.add("nav_panel_active");
+        }
+      }
+      leftPanelWidth.value = left_container.value?.getBoundingClientRect()
+        .width as number;
       emitter.emit("resize-left-right-panels", {
-        effectPanelSize: left_container.value?.clientWidth,
+        effectPanelSize: leftPanelWidth,
         panel: "left",
       });
 
@@ -102,8 +144,20 @@ function togglePanelActive(panel: string, e: MouseEvent) {
     case "right":
       rightFullScreen.value = !rightFullScreen.value;
       right_container.value?.classList.toggle("panel_active");
+      if (!right_container.value?.classList.contains("panel_active")) {
+        right_container.value?.classList.remove("nav_panel_active");
+      } else {
+        if (
+          nav_sticky &&
+          !right_container.value?.classList.contains("nav_panel_active")
+        ) {
+          right_container.value?.classList.add("nav_panel_active");
+        }
+      }
+      rightPanelWidth.value = right_container.value?.getBoundingClientRect()
+        .width as number;
       emitter.emit("resize-left-right-panels", {
-        effectPanelSize: right_container.value?.clientWidth,
+        effectPanelSize: rightPanelWidth,
         panel: "right",
       });
       break;
@@ -120,6 +174,7 @@ function togglePanelActive(panel: string, e: MouseEvent) {
   overflow: hidden;
   position: relative;
   user-select: none;
+  -webkit-user-select: none;
 }
 
 .box {
@@ -136,6 +191,9 @@ function togglePanelActive(panel: string, e: MouseEvent) {
   width: 100%;
   position: fixed;
   z-index: 100;
+}
+.nav_panel_active {
+  width: calc(100vw - 350px);
 }
 
 .split-bar {

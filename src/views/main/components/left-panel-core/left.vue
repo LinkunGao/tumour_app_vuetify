@@ -13,7 +13,7 @@
     ></Upload>
   </div>
   <div
-    v-show="showNavToolsBar"
+    v-show="panelWidth >= 600 ? true : false"
     class="nav_bar_container"
     ref="nav_bar_container"
   >
@@ -72,6 +72,10 @@ import {
 } from "@/views/main/components/tools";
 import emitter from "@/plugins/bus";
 import { convertInitMaskData } from "@/plugins/worker";
+
+type Props = {
+  panelWidth: number;
+};
 
 let appRenderer: Copper.copperRenderer;
 let max = ref(0);
@@ -149,19 +153,27 @@ let originUrls = ref<ICaseUrls>({ nrrdUrls: [], jsonUrl: "" });
 const eraserUrls = getEraserUrlsForOffLine();
 const cursorUrls = getCursorUrlsForOffLine();
 
+withDefaults(defineProps<Props>(), {
+  panelWidth: 1000,
+});
+
 function onEmitter() {
   emitter.on("show_debug_mode", (flag) => {
     debug_mode.value = flag as boolean;
   });
-  emitter.on("resize-left-right-panels", (effects) => {
-    if ((effects as any).panel === "left") {
-      if ((effects as any).effectPanelSize < 600) {
-        showNavToolsBar.value = false;
-        return;
-      }
-    }
-    showNavToolsBar.value = true;
-  });
+
+  // emitter.on("resize-left-right-panels", (effects) => {
+  //   console.log((effects as any).effectPanelSize);
+
+  //   // if ((effects as any).panel === "left") {
+  //   //   if ((effects as any).effectPanelSize < 600) {
+  //   //     showNavToolsBar.value = false;
+  //   //     return;
+  //   //   }
+  //   // }
+  //   // showNavToolsBar.value = true;
+  // });
+
   emitter.on("toggleTheme", () => {
     base_container.value?.classList.toggle("dark");
   });

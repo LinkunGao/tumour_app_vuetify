@@ -33,7 +33,16 @@ import * as Copper from "copper3d";
 import "copper3d/dist/css/style.css";
 // import createKDTree from "copper3d-tree";
 // import * as Copper from "@/ts/index";
-import { getCurrentInstance, onMounted, ref } from "vue";
+import {
+  getCurrentInstance,
+  onMounted,
+  ref,
+  watchEffect,
+  watch,
+  reactive,
+  toRef,
+  toRefs,
+} from "vue";
 import Drawer from "@/components/commonBar/drawer.vue";
 import emitter from "@/plugins/bus";
 import { storeToRefs } from "pinia";
@@ -55,6 +64,10 @@ import {
 } from "@/views/main/components/tools";
 import { PanelOperationManager, valideClock, deepClone } from "./utils-right";
 import loadingGif from "@/assets/loading.svg";
+
+type Props = {
+  panelWidth: number;
+};
 
 let refs = null;
 let bg = ref<HTMLDivElement>();
@@ -111,6 +124,20 @@ const { maskMeshObj } = storeToRefs(useMaskMeshObjStore());
 const { getMaskMeshObj } = useMaskMeshObjStore();
 const { nipplePoints } = storeToRefs(useNipplePointsStore());
 const { getNipplePoints } = useNipplePointsStore();
+
+const props = withDefaults(defineProps<Props>(), {
+  panelWidth: 1000,
+});
+const pr = reactive(props);
+const { panelWidth } = toRefs(pr);
+
+// watchEffect(() => {
+//   console.log(props.panelWidth);
+// });
+
+watch(panelWidth, (newVal, oldVal) => {
+  copperScene?.onWindowResize();
+});
 
 onMounted(() => {
   onEmitter();
@@ -292,9 +319,10 @@ function onEmitter() {
   });
 
   emitter.on("resize-left-right-panels", () => {
+    // give a 500ms delay for wait right panel to recalculate width, then update threejs
     setTimeout(() => {
       copperScene?.onWindowResize();
-    }, 100);
+    }, 300);
   });
 }
 
@@ -677,6 +705,8 @@ const handleViewsDoubleClick = (view: string) => {
   border-radius: 10px;
   padding: 10px 15px;
   font-size: smaller;
+  user-select: none;
+  -webkit-user-select: none;
   /* display: flex; */
   /* align-items: center; */
   /* justify-content: center; */

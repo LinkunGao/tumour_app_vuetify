@@ -36,7 +36,8 @@ export default defineConfig({
   ],
   define: {
     "process.env": {
-      BASE_URL: "/Tumour_Tracking_App/",
+      // BASE_URL: "/Tumour_Tracking_App/",
+      BASE_URL: "/",
     },
   },
   resolve: {
@@ -45,7 +46,8 @@ export default defineConfig({
     },
     extensions: [".js", ".json", ".jsx", ".mjs", ".ts", ".tsx", ".vue"],
   },
-  base: "/Tumour_Tracking_App/",
+  // base: "/Tumour_Tracking_App/",
+  base: "/",
   build: {
     outDir: "./build",
   },
