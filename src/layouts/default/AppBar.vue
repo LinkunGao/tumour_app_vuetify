@@ -72,6 +72,9 @@ function manageEmitters() {
 
 function toggleDrawer() {
   drawer.value = !drawer.value;
+  if (!drawer.value && !temporary.value) {
+    emitter.emit("close-drawer-sticky");
+  }
   emitter.emit("resize-left-right-panels", {
     panel: "right",
   });
