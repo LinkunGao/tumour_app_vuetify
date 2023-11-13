@@ -16,7 +16,7 @@
     <v-app-bar-nav-icon @click="toggleDrawer"></v-app-bar-nav-icon>
 
     <v-app-bar-title class="text-deep-orange">
-      <span>Tumour Position & Extent Reporting</span>
+      <span>Tumour Position & Extent Reporting </span>
       <span class="text-body-2">v3.0.0</span>
     </v-app-bar-title>
 
