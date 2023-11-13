@@ -16,7 +16,7 @@
     <v-app-bar-nav-icon @click="toggleDrawer"></v-app-bar-nav-icon>
 
     <v-app-bar-title class="text-deep-orange">
-      <span>Tumour Position & Extent Reporting</span>
+      <span>Tumour Position & Extent Reporting </span>
       <span class="text-body-2">v3.0.0</span>
     </v-app-bar-title>
 
@@ -72,6 +72,9 @@ function manageEmitters() {
 
 function toggleDrawer() {
   drawer.value = !drawer.value;
+  if (!drawer.value && !temporary.value) {
+    emitter.emit("close-drawer-sticky");
+  }
   emitter.emit("resize-left-right-panels", {
     panel: "right",
   });

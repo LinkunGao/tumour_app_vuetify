@@ -17,7 +17,7 @@
 
 <script setup lang="ts">
 import Switcher from "@/components/commonBar/Switcher.vue";
-import { ref } from "vue";
+import { ref, onMounted, onUnmounted } from "vue";
 import emitter from "@/plugins/bus";
 
 const debugMode = ref(false);
@@ -25,6 +25,17 @@ const switchDebugLabel = ref("off");
 
 const stickMode = ref(false);
 const switchStickyLabel = ref("off");
+
+onMounted(() => {
+  manageEmitters();
+});
+
+function manageEmitters() {
+  emitter.on("close-drawer-sticky", () => {
+    stickMode.value = false;
+    toggleSticky(stickMode.value);
+  });
+}
 
 function toggleDebug(value: boolean) {
   switchDebugLabel.value = switchDebugLabel.value === "on" ? "off" : "on";
