@@ -267,7 +267,7 @@ const readyToLoad = (urlsArray: Array<string>, name: string) => {
 };
 
 const onSaveMask = async (flag: boolean) => {
-  if (flag) {
+  if (flag && nrrdTools.protectedData.maskData.paintImages.z.length > 0) {
     switchAnimationStatus("flex", "Saving masks data, please wait......");
     await sendSaveMask(currentCaseId);
     switchAnimationStatus("none");

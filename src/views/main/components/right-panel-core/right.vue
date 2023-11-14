@@ -3,7 +3,7 @@
     <div v-show="openLoading" ref="loading_c" class="loading">
       <div class="loading_text text-cyan-darken-3">Load tumour model...</div>
     </div>
-    <v-card class="value-panel mt-1 ml-1" color="right-display-panel">
+    <v-card class="value-panel mt-2" color="right-display-panel">
       <div color="primary">
         <span>Tumour volume:</span> <span>{{ volume }} cm<sup>3</sup></span>
       </div>
@@ -19,10 +19,14 @@
     </v-card>
     <div></div>
     <div ref="c_gui" id="gui"></div>
-    <Drawer
-      @on-view-single-click="handleViewSigleClick"
-      @on-view-double-click="handleViewsDoubleClick"
-    />
+  </div>
+  <div class="nav_bar_container" ref="nav_bar_container">
+    <div v-show="panelWidth >= 350 ? true : false">
+      <NavBarRight
+        @on-view-single-click="handleViewSigleClick"
+        @on-view-double-click="handleViewsDoubleClick"
+      />
+    </div>
   </div>
 </template>
 
@@ -44,6 +48,7 @@ import {
   toRefs,
 } from "vue";
 import Drawer from "@/components/commonBar/drawer.vue";
+import NavBarRight from "@/components/commonBar/NavBarRight.vue";
 import emitter from "@/plugins/bus";
 import { storeToRefs } from "pinia";
 import {
@@ -318,11 +323,17 @@ function onEmitter() {
     // resetSliceIndex(updateIndex)
   });
 
-  emitter.on("resize-left-right-panels", () => {
-    // give a 500ms delay for wait right panel to recalculate width, then update threejs
+  emitter.on("resize-left-right-panels", (val) => {
+    // give a 300ms delay for wait right panel to recalculate width, then update threejs
     setTimeout(() => {
       copperScene?.onWindowResize();
     }, 300);
+
+    if ((val as any).panel === "right") {
+      setTimeout(() => {
+        copperScene?.onWindowResize();
+      }, 1000);
+    }
   });
 }
 
@@ -667,7 +678,7 @@ const handleViewsDoubleClick = (view: string) => {
 <style scoped>
 #bg_2 {
   width: 95%;
-  height: 100%;
+  flex: 0 0 90%;
   position: relative;
   display: flex;
   justify-content: center;
@@ -679,6 +690,14 @@ const handleViewsDoubleClick = (view: string) => {
   position: absolute;
   top: 0;
   right: 0;
+}
+
+.nav_bar_container {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
 }
 
 .loading {
