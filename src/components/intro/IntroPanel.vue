@@ -15,10 +15,14 @@
       class="pa-6 text-white mx-auto"
       color="surface"
       max-width="550"
+      max-height="650"
     >
       <h4 class="text-h5 font-weight-bold mb-4">How to use:</h4>
 
       <p class="mb-8">
+        <a href="#" class="text-red-accent-2 text-decoration-none">Full panel view: </a>
+        <p class="ml-9">Mouse left double click the panel.</p>
+
         <a href="#" class="text-red-accent-2 text-decoration-none">Zoom: </a>
         <p class="ml-9">Scroll mouse wheel.</p>
 

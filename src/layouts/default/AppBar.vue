@@ -14,10 +14,12 @@
 
   <v-app-bar color="surface" class="d-flex justify-end">
     <v-app-bar-nav-icon @click="toggleDrawer"></v-app-bar-nav-icon>
-
-    <v-app-bar-title class="text-deep-orange">
-      <span>Tumour Position & Extent Reporting </span>
-      <span class="text-body-2">v3.0.0</span>
+    <!-- pink-darken-3 text-deep-orange-->
+    <v-app-bar-title>
+      <span class="text-h5 text-capitalize"
+        >Tumour Position & Extent Reporting
+      </span>
+      <span class="text-body-2 font-italic text-deep-orange">v3.0.0</span>
     </v-app-bar-title>
 
     <div width="" class="w-50 d-flex flex-row justify-end align-center px-2">
