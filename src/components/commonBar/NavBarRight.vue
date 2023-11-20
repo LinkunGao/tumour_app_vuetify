@@ -12,7 +12,7 @@
             <img class="image" v-else :src="item.img_blank" alt="" />
           </i>
           <i class="switch_font" v-else>
-            <ion-icon name="sync-outline"></ion-icon>
+            <ion-icon name="refresh-outline"></ion-icon>
           </i>
           <v-tooltip activator="parent" location="top">{{
             item.name
@@ -182,11 +182,5 @@ onMounted(() => {
   font-size: 1em;
   color: #f44336;
 }
-.iconfont {
-  font-size: 36px;
-}
-.switch_font img {
-  width: 16px;
-  height: 16px;
-}
+
 </style>
