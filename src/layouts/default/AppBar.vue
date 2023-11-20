@@ -16,7 +16,7 @@
     <v-app-bar-nav-icon @click="toggleDrawer"></v-app-bar-nav-icon>
     <!-- pink-darken-3 text-deep-orange-->
     <v-app-bar-title>
-      <span class="text-h5 text-capitalize"
+      <span class="text-capitalize"
         >Tumour Position & Extent Reporting
       </span>
       <span class="text-body-2 font-italic text-deep-orange">v3.0.0</span>

@@ -20,23 +20,23 @@
     <div></div>
     <div ref="c_gui" id="gui"></div>
   </div>
-  <div class="nav_bar_container" ref="nav_bar_container">
-    <div v-show="panelWidth >= 350 ? true : false">
+  <div v-show="panelWidth >= 350 ? true : false" class="nav_bar_container" ref="nav_bar_container">
+
       <NavBarRight
         @on-view-single-click="handleViewSigleClick"
         @on-view-double-click="handleViewsDoubleClick"
       />
-    </div>
+
   </div>
 </template>
 
 <script setup lang="ts">
 import { GUI } from "dat.gui";
 import * as THREE from "three";
-import * as Copper from "copper3d";
+// import * as Copper from "copper3d";
 import "copper3d/dist/css/style.css";
 // import createKDTree from "copper3d-tree";
-// import * as Copper from "@/ts/index";
+import * as Copper from "@/ts/index";
 import {
   getCurrentInstance,
   onMounted,
@@ -172,6 +172,9 @@ onMounted(() => {
       }
       clearInterval(timer as NodeJS.Timer);
     } else {
+      if(!!maskMeshObj.value.maskMeshObjUrl){
+        URL.revokeObjectURL(maskMeshObj.value.maskMeshObjUrl)
+      }
       const blob = new Blob([event.data], { type: "model/obj" });
       const url = URL.createObjectURL(blob);
       maskMeshObj.value.maskMeshObjUrl = url;
@@ -222,6 +225,9 @@ function onEmitter() {
     // await getMaskNrrd(casename);
     maskNrrd.value = case_infos.maskNrrd;
     if (case_detail.has_mesh) {
+      if(!!maskMeshObj.value.maskMeshObjUrl){
+        URL.revokeObjectURL(maskMeshObj.value.maskMeshObjUrl)
+      }
       await getMaskMeshObj(casename);
       volume.value = Math.ceil(maskMeshObj.value.meshVolume as number) / 1000;
       loadNrrd(
@@ -412,6 +418,8 @@ function loadNrrd(url: string, url_1: string, c_gui: any) {
       const x_bias = -(origin[0] * 2 + ras[0]) / 2;
       const y_bias = -(origin[1] * 2 + ras[1]) / 2;
       const z_bias = -(origin[2] * 2 + ras[2]) / 2;
+      
+      
 
       // createOriginSphere(origin,ras,spacing,x_bias,y_bias,z_bias);
       loadNrrdMeshes = registrationMeshes = nrrdMesh;
@@ -432,9 +440,12 @@ function loadNrrd(url: string, url_1: string, c_gui: any) {
       copperScene.controls.panSpeed = 0.5;
 
       if (url_1) {
+
+        // copperScene.loadVtk("/prone_surface.vtk")
+
         copperScene.loadOBJ(url_1, (content) => {
           allRightPanelMeshes.push(content);
-
+          
           content.position.set(bias.x, bias.y, bias.z);
           const tumourMesh = content.children[0] as THREE.Mesh;
           const tumourMaterial =
@@ -470,8 +481,14 @@ function loadNrrd(url: string, url_1: string, c_gui: any) {
           );
         });
       } else {
+        tumourSliceIndex.x = nrrdSlices.x.index 
+        tumourSliceIndex.y = nrrdSlices.y.index 
+        tumourSliceIndex.z = nrrdSlices.z.index 
         loadBreastModel(gui as GUI, origin, spacing, dimensions, bias);
       }
+
+      // reset view
+      resetNrrdImage();
     };
 
     (copperScene as Copper.copperScene).loadNrrd(

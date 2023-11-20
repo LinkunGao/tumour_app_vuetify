@@ -33,9 +33,9 @@
 </template>
 <script setup lang="ts">
 import { GUI, GUIController } from "dat.gui";
-import * as Copper from "copper3d";
+// import * as Copper from "copper3d";
 import "copper3d/dist/css/style.css";
-// import * as Copper from "@/ts/index";
+import * as Copper from "@/ts/index";
 import loadingGif from "@/assets/loading.svg";
 
 import NavBar from "@/components/commonBar/NavBar.vue";
@@ -115,6 +115,7 @@ let selectedContrastFolder: GUI;
 let firstLoad = true;
 let loadCases = true;
 let loadOrigin = false;
+let originRegswitcher = false;
 
 let currentCaseId = "";
 let regCheckboxElement: HTMLInputElement;
@@ -149,6 +150,7 @@ const { clearMaskMeshObj } = useClearMaskMeshStore();
 const { getNrrdAndJsonFileUrls } = useNrrdCaseFileUrlsWithOrderStore();
 const { caseUrls } = storeToRefs(useNrrdCaseFileUrlsWithOrderStore());
 let originUrls = ref<ICaseUrls>({ nrrdUrls: [], jsonUrl: "" });
+let regUrls = ref<ICaseUrls>({ nrrdUrls: [], jsonUrl: "" });
 
 const eraserUrls = getEraserUrlsForOffLine();
 const cursorUrls = getCursorUrlsForOffLine();
@@ -311,6 +313,10 @@ const sendInitMaskToBackend = async () => {
   const height = dimensions[1];
   const voxelSpacing = nrrdTools.getVoxelSpacing();
   const spaceOrigin = nrrdTools.getSpaceOrigin();
+
+  console.log("spaceOrigin", spaceOrigin);
+  
+  
   if (len > 0) {
     const result = convertInitMaskData({
       masksData,
@@ -430,19 +436,20 @@ watchEffect(() => {
       return a.order - b.order;
     });
 
-    if (loadOrigin) {
+    if(originRegswitcher){ 
       nrrdTools.switchAllSlicesArrayData(allSlices);
-      loadOrigin = false;
-      switchAnimationStatus("none");
-      setTimeout(
-        () => switchRegCheckBoxStatus(regCkeckbox.domElement, "auto", "1"),
-        1000
-      );
-      if (originAllSlices.length === 0) {
-        originAllSlices = [...allSlices];
-        originAllMeshes = [...allLoadedMeshes];
+      if(loadOrigin) {
+        loadOrigin = false;
+        if (originAllSlices.length === 0) {
+          originAllSlices = [...allSlices];
+          originAllMeshes = [...allLoadedMeshes];
+        }
       }
-    } else {
+      setTimeout(
+          () => switchRegCheckBoxStatus(regCkeckbox.domElement, "auto", "1"),
+          1000
+        );
+  } else {
       nrrdTools.clear();
       nrrdTools.setAllSlices(allSlices);
 
@@ -505,6 +512,8 @@ watchEffect(() => {
     }, 1000);
     firstLoad = false;
     loadCases = false;
+    originRegswitcher = false;
+    switchAnimationStatus("none");
   }
 });
 
@@ -604,6 +613,7 @@ function onContrastSelected(flag: boolean, i: number) {
 }
 
 async function onCaseSwitched(casename: string) {
+  loadOrigin = false;
   switchAnimationStatus("flex", "Saving masks data, please wait......");
   // revoke the regsiter images
   if (!!originUrls.value && originUrls.value.nrrdUrls.length > 0) {
@@ -634,6 +644,7 @@ async function onCaseSwitched(casename: string) {
       caseUrls.value.nrrdUrls = urls;
     }
   } else {
+    
     switchAnimationStatus("flex", "Prepare Nrrd files, please wait......");
     // await getCaseFileUrls(value);
 
@@ -645,6 +656,7 @@ async function onCaseSwitched(casename: string) {
     await getNrrdAndJsonFileUrls(requests);
 
     if (!!caseUrls.value) {
+      regUrls.value = caseUrls.value as ICaseUrls;
       urls = caseUrls.value.nrrdUrls;
       loadedUrls[currentCaseId] = caseUrls.value;
       const details = cases.value?.details;
@@ -661,10 +673,13 @@ async function onCaseSwitched(casename: string) {
 }
 
 async function onRegistedStateChanged(isShowRegisterImage: boolean) {
+
+  originRegswitcher = true;
   switchRegCheckBoxStatus(regCkeckbox.domElement, "none", "0.5");
-  loadOrigin = true;
   switchAnimationStatus("flex", "Prepare and Loading data, please wait......");
+
   if (!isShowRegisterImage) {
+    loadOrigin = true;
     if (originAllSlices.length > 0) {
       allSlices = [...originAllSlices];
       allLoadedMeshes = [...originAllMeshes];
@@ -678,23 +693,18 @@ async function onRegistedStateChanged(isShowRegisterImage: boolean) {
       return;
     }
 
-    const reQuestInfo: IRegRquest = {
-      name: currentCaseId,
-      radius: toolsState?.sphereRadius,
-      origin: toolsState?.sphereOrigin.z,
-    };
-
     if (
       !(!!originUrls.value?.nrrdUrls && originUrls.value?.nrrdUrls.length > 0)
     ) {
       const requests = findRequestUrls(
         cases.value?.details as Array<IDetails>,
-        reQuestInfo.name,
+        currentCaseId,
         "origin"
       );
       await getNrrdAndJsonFileUrls(requests);
       originUrls.value = caseUrls.value as ICaseUrls;
     }
+
     if (!!originUrls.value?.nrrdUrls && originUrls.value?.nrrdUrls.length > 0) {
       urls = originUrls.value.nrrdUrls;
       readyToLoad(urls, "origin")?.then((data) => {
@@ -707,7 +717,9 @@ async function onRegistedStateChanged(isShowRegisterImage: boolean) {
       });
     }
   } else {
+    loadOrigin = false;
     if (defaultRegAllSlices.length > 0) {
+      urls = regUrls.value.nrrdUrls;
       allSlices = [...defaultRegAllSlices];
       allLoadedMeshes = [...defaultRegAllMeshes];
       emitter.emit("showRegBtnToRight", {
@@ -719,10 +731,10 @@ async function onRegistedStateChanged(isShowRegisterImage: boolean) {
       filesCount.value = 5;
       return;
     }
-    if (caseUrls.value) {
-      urls = caseUrls.value.nrrdUrls;
-      readyToLoad(urls, "registration");
-    }
+    // if (caseUrls.value) {
+    //   urls = caseUrls.value.nrrdUrls;
+    //   readyToLoad(urls, "registration");
+    // }
   }
 }
 
