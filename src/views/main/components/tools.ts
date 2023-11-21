@@ -103,7 +103,7 @@ export function createOriginSphere(
     origin[1] + y_bias,
     origin[2] + z_bias,
   ];
-
+  
   spherelt.position.set(resetOrigin[0], resetOrigin[1], resetOrigin[2]);
   spherert.position.set(
     resetOrigin[0] + ras[0],

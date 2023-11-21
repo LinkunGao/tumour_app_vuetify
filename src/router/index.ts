@@ -23,12 +23,14 @@ const routes = [
   },
 ];
 
-const router = createRouter({
-  history: createWebHistory(process.env.BASE_URL),
-  routes,
-});
+// use for the github repo
 
-export default router;
+// const router = createRouter({
+//   history: createWebHistory(process.env.BASE_URL),
+//   routes,
+// });
+
+// export default router;
 
 // const router = createRouter({
 //   history: createWebHashHistory(),
@@ -39,9 +41,9 @@ export default router;
 
 // console.log(process.env.BASE_URL);
 
-// const router = createRouter({
-//   history: createWebHistory(),
-//   routes,
-// });
+const router = createRouter({
+  history: createWebHistory(),
+  routes,
+});
 
-// export default router;
+export default router;

@@ -33,10 +33,10 @@
 <script setup lang="ts">
 import { GUI } from "dat.gui";
 import * as THREE from "three";
-// import * as Copper from "copper3d";
+import * as Copper from "copper3d";
 import "copper3d/dist/css/style.css";
 // import createKDTree from "copper3d-tree";
-import * as Copper from "@/ts/index";
+// import * as Copper from "@/ts/index";
 import {
   getCurrentInstance,
   onMounted,
@@ -61,11 +61,13 @@ import {
   ISliceIndex,
   ILeftRightData,
   INipplePoints,
+  ISaveSphere
 } from "@/models/apiTypes";
 import {
   findCurrentCase,
   transformMeshPointToImageSpace,
   getClosestNipple,
+  createOriginSphere
 } from "@/views/main/components/tools";
 import { PanelOperationManager, valideClock, deepClone } from "./utils-right";
 import loadingGif from "@/assets/loading.svg";
@@ -122,6 +124,9 @@ let guiState = {
 let clickCount = 0;
 let clickTimer: any = null;
 let validFlag = false;
+
+let resetOrigin = [0,0,0];
+let preTumourShpere:THREE.Mesh | undefined = undefined;
 
 const { maskNrrd } = storeToRefs(useMaskNrrdStore());
 const { getMaskNrrd } = useMaskNrrdStore();
@@ -341,6 +346,37 @@ function onEmitter() {
       }, 1000);
     }
   });
+
+  emitter.on("drawSphere",(val)=>{
+
+    if(!!preTumourShpere){
+      copperScene.scene.remove(preTumourShpere);
+      preTumourShpere = undefined;
+    }
+
+    const sphereData = val as ISaveSphere
+    const geometry = new THREE.SphereGeometry(sphereData.sphereRadiusPixel, 32, 16);
+    const material = new THREE.MeshBasicMaterial({ color: "#00E676" });
+
+    const sphereTumour = new THREE.Mesh(geometry, material);
+    const spherePosition = [resetOrigin[0]+sphereData.sphereOriginPixel[0], resetOrigin[1]+sphereData.sphereOriginPixel[1], resetOrigin[2]+sphereData.sphereOriginPixel[2]]
+    
+    sphereTumour.position.set(spherePosition[0], spherePosition[1],spherePosition[2])
+    copperScene.scene.add(sphereTumour)
+
+    loadNrrdSlices.x.index = tumourSliceIndex.x =
+    loadNrrdSlices.x.RSAMaxIndex / 2 + sphereTumour.position.x;
+    loadNrrdSlices.y.index = tumourSliceIndex.y =
+    loadNrrdSlices.y.RSAMaxIndex / 2 + sphereTumour.position.y;
+    loadNrrdSlices.z.index = tumourSliceIndex.z =
+    loadNrrdSlices.z.RSAMaxIndex / 2 + sphereTumour.position.z;
+    loadNrrdSlices.x.repaint.call(loadNrrdSlices.x);
+    loadNrrdSlices.y.repaint.call(loadNrrdSlices.y);
+    loadNrrdSlices.z.repaint.call(loadNrrdSlices.z);
+
+    preTumourShpere = sphereTumour;
+    allRightPanelMeshes.push(sphereTumour);
+  })
 }
 
 // async function getMaskNrrdHandle() {
@@ -393,6 +429,7 @@ function loadNrrd(url: string, url_1: string, c_gui: any) {
   originMeshes = undefined;
   registrationSlices = undefined;
   originSlices = undefined;
+  preTumourShpere = undefined;
 
   // remove GUI
   const opts: Copper.optsType = {
@@ -419,9 +456,17 @@ function loadNrrd(url: string, url_1: string, c_gui: any) {
       const y_bias = -(origin[1] * 2 + ras[1]) / 2;
       const z_bias = -(origin[2] * 2 + ras[2]) / 2;
       
+
+      resetOrigin = [
+            origin[0] + x_bias,
+            origin[1] + y_bias,
+            origin[2] + z_bias,
+          ];
       
 
-      // createOriginSphere(origin,ras,spacing,x_bias,y_bias,z_bias);
+      const a = createOriginSphere(origin,ras,spacing,x_bias,y_bias,z_bias);
+      copperScene.scene.add(...a)
+
       loadNrrdMeshes = registrationMeshes = nrrdMesh;
       loadNrrdSlices = registrationSlices = nrrdSlices;
       const bias = new THREE.Vector3(x_bias, y_bias, z_bias);
@@ -440,9 +485,6 @@ function loadNrrd(url: string, url_1: string, c_gui: any) {
       copperScene.controls.panSpeed = 0.5;
 
       if (url_1) {
-
-        // copperScene.loadVtk("/prone_surface.vtk")
-
         copperScene.loadOBJ(url_1, (content) => {
           allRightPanelMeshes.push(content);
           
@@ -577,6 +619,22 @@ async function loadBreastModel(
     allRightPanelMeshes.push(sphereL);
     allRightPanelMeshes.push(sphereR);
   }
+
+  // load breast model
+    // copperScene.loadOBJ("/prone_surface.obj", (content) => {
+    //   allRightPanelMeshes.push(content);
+          
+    //   content.position.set(bias.x, bias.y, bias.z);
+    //   content.traverse((child) => {
+    //       if ((child as THREE.Mesh).isMesh) {
+    //         (child as THREE.Mesh).material = new THREE.MeshPhongMaterial({
+    //           side: THREE.DoubleSide,
+    //           wireframe:true,
+    //           color: "#827717",
+    //         });
+    //       }
+    //     });
+    // })
 }
 
 function removeOldMeshes(meshSet: THREE.Object3D<THREE.Event>[]) {

@@ -74,9 +74,10 @@ function manageEmitters() {
 
 function toggleDrawer() {
   drawer.value = !drawer.value;
-  if (!drawer.value && !temporary.value) {
-    emitter.emit("close-drawer-sticky");
-  }
+  temporary.value = !drawer.value;
+
+  emitter.emit("drawer_status", drawer.value);
+  emitter.emit("set_nav_sticky_mode", drawer.value);
   emitter.emit("resize-left-right-panels", {
     panel: "right",
   });

@@ -9,19 +9,28 @@
       ></v-list-item>
     </template>
 
-    <v-select
+  
+      <v-select
+      class="mx-4"
       :items="cases?.names"
-      density="compact"
+      density="comfortable"
       label="Cases"
+      variant="outlined"
+      :autofocus="true"
       :disabled="disableSelectCase"
       @update:modelValue="onCaseSwitched"
     ></v-select>
+
+    
+
     <v-select
+      class="mx-4"
       v-model="slectedContrast"
       :items="contrastValue"
       :disabled="disableSelectContrast"
       chips
       label="Contrast Select"
+      variant="outlined"
       multiple
       @update:modelValue="onContrastSelected"
     ></v-select>
@@ -153,4 +162,5 @@ async function getInitData() {
 }
 </script>
 
-<style scoped></style>
+<style scoped>
+</style>

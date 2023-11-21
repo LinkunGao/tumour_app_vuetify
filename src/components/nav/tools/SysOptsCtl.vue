@@ -23,17 +23,18 @@ import emitter from "@/plugins/bus";
 const debugMode = ref(false);
 const switchDebugLabel = ref("off");
 
-const stickMode = ref(false);
-const switchStickyLabel = ref("off");
+const stickMode = ref(true);
+const switchStickyLabel = ref("on");
 
 onMounted(() => {
   manageEmitters();
 });
 
 function manageEmitters() {
-  emitter.on("close-drawer-sticky", () => {
-    stickMode.value = false;
-    toggleSticky(stickMode.value);
+
+  emitter.on("drawer_status", (val)=>{
+    stickMode.value = val as boolean;
+    switchStickyLabel.value =  stickMode.value === false ? "off" : "on";
   });
 }
 

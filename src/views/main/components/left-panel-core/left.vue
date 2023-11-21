@@ -389,9 +389,14 @@ const getSphereData = async (sphereOrigin: number[], sphereRadius: number) => {
   const sphereData: ISaveSphere = {
     caseId: currentCaseId,
     sliceId: sphereOrigin[2],
-    sphereRadiusMM: sphereRadius,
-    sphereOriginMM: sphereOrigin,
+    origin: nrrdTools.nrrd_states.spaceOrigin,
+    spacing: nrrdTools.nrrd_states.voxelSpacing,
+    sphereRadiusPixel: sphereRadius,
+    sphereOriginPixel: [sphereOrigin[0],sphereOrigin[1],sphereOrigin[2]*nrrdTools.nrrd_states.voxelSpacing[2]],
   };
+
+  emitter.emit("drawSphere",sphereData);
+
   await sendSaveSphere(sphereData);
 };
 
@@ -663,7 +668,7 @@ async function onCaseSwitched(casename: string) {
       emitter.emit("casename", {
         currentCaseId,
         details,
-        maskNrrd: urls[1],
+        maskNrrd: !!urls[1]?urls[1]:urls[0],
       });
     }
   }
