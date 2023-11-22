@@ -7,6 +7,12 @@ import glslify from "rollup-plugin-glslify";
 import { defineConfig } from "vite";
 import { fileURLToPath, URL } from "node:url";
 
+const filesNeedToExclude = ["src/ts"];
+
+const filesPathToExclude = filesNeedToExclude.map((src) => {
+  return fileURLToPath(new URL(src, import.meta.url));
+});
+
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
@@ -50,6 +56,9 @@ export default defineConfig({
   base: "/",
   build: {
     outDir: "./build",
+    rollupOptions: {
+      external: [...filesPathToExclude]
+    }
   },
   server: {
     host: "0.0.0.0",

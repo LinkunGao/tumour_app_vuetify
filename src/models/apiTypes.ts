@@ -48,8 +48,8 @@ export interface ISaveSphere {
   sliceId: number;
   origin: number[];
   spacing: number[];
-  sphereRadiusPixel: number;
-  sphereOriginPixel: number[];
+  sphereRadiusMM: number;
+  sphereOriginMM: number[];
 }
 export interface IMaskMesh {
   maskMeshObjUrl?: string;

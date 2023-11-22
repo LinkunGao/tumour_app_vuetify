@@ -1,5 +1,5 @@
 <template>
-  <div id="bg_2" ref="bg">
+  <div id="right_panel" ref="right_panel">
     <div v-show="openLoading" ref="loading_c" class="loading">
       <div class="loading_text text-cyan-darken-3">Load tumour model...</div>
     </div>
@@ -18,9 +18,9 @@
       </div>
     </v-card>
     <div></div>
-    <div ref="c_gui" id="gui"></div>
+    <div ref="right_panel_gui" id="gui"></div>
   </div>
-  <div v-show="panelWidth >= 350 ? true : false" class="nav_bar_container" ref="nav_bar_container">
+  <div v-show="panelWidth >= 350 ? true : false" class="nav_bar_right_container" ref="nav_bar_right_container">
 
       <NavBarRight
         @on-view-single-click="handleViewSigleClick"
@@ -76,11 +76,10 @@ type Props = {
   panelWidth: number;
 };
 
-let refs = null;
-let bg = ref<HTMLDivElement>();
+let right_panel = ref<HTMLDivElement>();
 let appRenderer: Copper.copperRenderer;
 let panelOperator: PanelOperationManager;
-let c_gui: HTMLDivElement = ref<any>(null);
+let right_panel_gui = ref<HTMLDivElement>();
 let loading_c = ref<HTMLDivElement>();
 let loadBar1: Copper.loadingBarType;
 let casename: string;
@@ -152,10 +151,9 @@ watch(panelWidth, (newVal, oldVal) => {
 
 onMounted(() => {
   onEmitter();
-  let { $refs } = (getCurrentInstance() as any).proxy;
-  refs = $refs;
-  // bg = refs.base_container_2;
-  c_gui = refs.c_gui;
+  // let { $refs } = (getCurrentInstance() as any).proxy;
+  // refs = $refs;
+  // right_panel = refs.base_container_2;
 
   loadBarMain = Copper.loading(loadingGif);
 
@@ -171,7 +169,7 @@ onMounted(() => {
     if (typeof event.data === "string") {
       if (event.data === "delete") {
         volume.value = 0;
-        loadNrrd(maskNrrd.value as string, "", c_gui);
+        loadNrrd(maskNrrd.value as string, "", right_panel_gui.value);
       } else {
         const volumeJson = JSON.parse(event.data);
         volume.value = Math.ceil(volumeJson.volume) / 1000;
@@ -187,19 +185,19 @@ onMounted(() => {
       loadNrrd(
         maskNrrd.value as string,
         maskMeshObj.value.maskMeshObjUrl as string,
-        c_gui
+        right_panel_gui.value
       );
       loadingContainer.style.display = "none";
     }
     openLoading.value = false;
   };
 
-  appRenderer = new Copper.copperRenderer(bg.value as HTMLDivElement, {
+  appRenderer = new Copper.copperRenderer(right_panel.value as HTMLDivElement, {
     guiOpen: false,
     alpha: true,
     logarithmicDepthBuffer: true,
   });
-  panelOperator = new PanelOperationManager(bg.value as HTMLDivElement);
+  panelOperator = new PanelOperationManager(right_panel.value as HTMLDivElement);
 
   loadBar1 = Copper.loading(loadingGif);
 
@@ -212,7 +210,7 @@ onMounted(() => {
 
 function onEmitter() {
   emitter.on("containerHight", (h) => {
-    (bg.value as HTMLDivElement).style.height = `${h}vh`;
+    (right_panel.value as HTMLDivElement).style.height = `${h}vh`;
   });
   emitter.on("saveMesh", () => {
     loadingContainer.style.display = "flex";
@@ -239,11 +237,11 @@ function onEmitter() {
       loadNrrd(
         maskNrrd.value as string,
         maskMeshObj.value.maskMeshObjUrl as string,
-        c_gui
+        right_panel_gui.value
       );
-      // loadNrrd(maskNrrd.value as string, "/Tumour_App_Vuetify/mesh_spacing.obj" as string, c_gui);
+      // loadNrrd(maskNrrd.value as string, "/Tumour_App_Vuetify/mesh_spacing.obj" as string, right_panel_gui.value);
     } else {
-      loadNrrd(maskNrrd.value as string, "", c_gui);
+      loadNrrd(maskNrrd.value as string, "", right_panel_gui.value);
       initPanelValue();
     }
   });
@@ -359,11 +357,11 @@ function onEmitter() {
     }
 
     const sphereData = val as ISaveSphere
-    const geometry = new THREE.SphereGeometry(sphereData.sphereRadiusPixel, 32, 16);
+    const geometry = new THREE.SphereGeometry(sphereData.sphereRadiusMM, 32, 16);
     const material = new THREE.MeshBasicMaterial({ color: "#228b22" });
 
     const sphereTumour = new THREE.Mesh(geometry, material);
-    const spherePosition = [resetOrigin[0]+sphereData.sphereOriginPixel[0], resetOrigin[1]+sphereData.sphereOriginPixel[1], resetOrigin[2]+sphereData.sphereOriginPixel[2]]
+    const spherePosition = [resetOrigin[0]+sphereData.sphereOriginMM[0], resetOrigin[1]+sphereData.sphereOriginMM[1], resetOrigin[2]+sphereData.sphereOriginMM[2]]
     
     sphereTumour.position.set(spherePosition[0], spherePosition[1],spherePosition[2])
     copperScene.scene.add(sphereTumour)
@@ -386,7 +384,7 @@ function onEmitter() {
 // async function getMaskNrrdHandle() {
 //   if (casename) {
 //     await getMaskNrrd(casename);
-//     loadNrrd(maskNrrd.value as string,"/Tumour_App_Vuetify/mask.obj", c_gui);
+//     loadNrrd(maskNrrd.value as string,"/Tumour_App_Vuetify/mask.obj", right_panel_gui.value);
 //   }
 // }
 
@@ -427,7 +425,7 @@ function initScene(name: string) {
   }
 }
 
-function loadNrrd(url: string, url_1: string, c_gui: any) {
+function loadNrrd(url: string, url_1: string, right_panel_gui: any) {
   removeOldMeshes(allRightPanelMeshes);
   registrationMeshes = undefined;
   originMeshes = undefined;
@@ -438,7 +436,7 @@ function loadNrrd(url: string, url_1: string, c_gui: any) {
   // remove GUI
   const opts: Copper.optsType = {
     openGui: false,
-    // container: c_gui,
+    // container: right_panel_gui.value,
   };
   if (!!copperScene) {
     const nrrdCallback = async (
@@ -671,7 +669,7 @@ const resetNrrdImage = () => {
   loadNrrdMeshes.x.visible = true;
   loadNrrdMeshes.y.visible = true;
   loadNrrdMeshes.z.visible = true;
-  // valideClock(false, copperScene, bg.value as HTMLElement);
+  // valideClock(false, copperScene, right_panel.value as HTMLElement);
   copperScene.controls.reset();
   copperScene.controls.mouseButtons.LEFT = THREE.MOUSE.ROTATE;
   resetSliceIndex(tumourSliceIndex);
@@ -707,7 +705,7 @@ const handleViewSigleClick = (view: string) => {
           // valideClock(
           //   validFlag,
           //   copperScene,
-          //   bg.value as HTMLElement,
+          //   right_panel.value as HTMLElement,
           //   nippleTl,
           //   nippleTr,
           //   loadNrrdMeshes
@@ -756,7 +754,7 @@ const handleViewsDoubleClick = (view: string) => {
 </script>
 
 <style scoped>
-#bg_2 {
+#right_panel {
   width: 95%;
   flex: 0 0 90%;
   position: relative;
@@ -772,7 +770,7 @@ const handleViewsDoubleClick = (view: string) => {
   right: 0;
 }
 
-.nav_bar_container {
+.nav_bar_right_container {
   flex: 1;
   display: flex;
   align-items: center;
