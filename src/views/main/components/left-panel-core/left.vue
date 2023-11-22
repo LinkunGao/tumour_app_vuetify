@@ -313,8 +313,6 @@ const sendInitMaskToBackend = async () => {
   const height = dimensions[1];
   const voxelSpacing = nrrdTools.getVoxelSpacing();
   const spaceOrigin = nrrdTools.getSpaceOrigin();
-
-  console.log("spaceOrigin", spaceOrigin);
   
   
   if (len > 0) {

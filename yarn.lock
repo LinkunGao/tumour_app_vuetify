@@ -819,10 +819,10 @@ copper3d-tree@^1.0.1:
     ndarray-select "^1.0.0"
     typedarray-pool "^1.0.0"
 
-copper3d@^2.0.4:
-  version "2.0.4"
-  resolved "https://registry.yarnpkg.com/copper3d/-/copper3d-2.0.4.tgz#76619147e6b5a15ee9fd666e36eb809c408650f4"
-  integrity sha512-jpiiVAWoOgsXq3apttU4hGlZjqC2Rvy76fDpkkacVRLpQv5t2q1WqpsOO+KKRCmt+Y0EEjRzzXVPXMoQrPcsnA==
+copper3d@^2.0.5:
+  version "2.0.5"
+  resolved "https://registry.yarnpkg.com/copper3d/-/copper3d-2.0.5.tgz#bbea905c79b6963963bf5e3bfad73e1cf66114e2"
+  integrity sha512-zl3r0c8foiv9nycLxqRrIITEOjHFOoSkXfSS1wS+OfH+awXZUKrLdc4YOz4mP/YRNlDXHyEY2kyRgsJ2qISnNw==
   dependencies:
     "@types/dat.gui" "^0.7.9"
     "@types/three" "^0.152.0"

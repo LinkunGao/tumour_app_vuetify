@@ -127,6 +127,7 @@ let validFlag = false;
 
 let resetOrigin = [0,0,0];
 let preTumourShpere:THREE.Mesh | undefined = undefined;
+let segementTumour:any = undefined;
 
 const { maskNrrd } = storeToRefs(useMaskNrrdStore());
 const { getMaskNrrd } = useMaskNrrdStore();
@@ -353,10 +354,13 @@ function onEmitter() {
       copperScene.scene.remove(preTumourShpere);
       preTumourShpere = undefined;
     }
+    if(!!segementTumour){
+      copperScene.scene.remove(segementTumour);
+    }
 
     const sphereData = val as ISaveSphere
     const geometry = new THREE.SphereGeometry(sphereData.sphereRadiusPixel, 32, 16);
-    const material = new THREE.MeshBasicMaterial({ color: "#00E676" });
+    const material = new THREE.MeshBasicMaterial({ color: "#228b22" });
 
     const sphereTumour = new THREE.Mesh(geometry, material);
     const spherePosition = [resetOrigin[0]+sphereData.sphereOriginPixel[0], resetOrigin[1]+sphereData.sphereOriginPixel[1], resetOrigin[2]+sphereData.sphereOriginPixel[2]]
@@ -464,8 +468,8 @@ function loadNrrd(url: string, url_1: string, c_gui: any) {
           ];
       
 
-      const a = createOriginSphere(origin,ras,spacing,x_bias,y_bias,z_bias);
-      copperScene.scene.add(...a)
+      // const a = createOriginSphere(origin,ras,spacing,x_bias,y_bias,z_bias);
+      // copperScene.scene.add(...a)
 
       loadNrrdMeshes = registrationMeshes = nrrdMesh;
       loadNrrdSlices = registrationSlices = nrrdSlices;
@@ -488,6 +492,7 @@ function loadNrrd(url: string, url_1: string, c_gui: any) {
         copperScene.loadOBJ(url_1, (content) => {
           allRightPanelMeshes.push(content);
           
+          segementTumour = content;
           content.position.set(bias.x, bias.y, bias.z);
           const tumourMesh = content.children[0] as THREE.Mesh;
           const tumourMaterial =
