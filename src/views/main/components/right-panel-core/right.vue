@@ -20,7 +20,7 @@
     <div></div>
     <div ref="right_panel_gui" id="gui"></div>
   </div>
-  <div v-show="panelWidth >= 350 ? true : false" class="nav_bar_right_container" ref="nav_bar_right_container">
+  <div v-show="panelWidth >= 410 ? true : false" class="nav_bar_right_container" ref="nav_bar_right_container">
 
       <NavBarRight
         @on-view-single-click="handleViewSigleClick"
@@ -35,7 +35,9 @@ import { GUI } from "dat.gui";
 import * as THREE from "three";
 import * as Copper from "copper3d";
 import "copper3d/dist/css/style.css";
-// import createKDTree from "copper3d-tree";
+import createKDTree from "copper3d-tree";
+import skinPoints from "@/assets/data/skin_mesh_surface_points"
+import ribPoints from "@/assets/data/outer_rib_mesh_surface_points"
 // import * as Copper from "@/ts/index";
 import {
   getCurrentInstance,
@@ -126,7 +128,13 @@ let validFlag = false;
 
 let resetOrigin = [0,0,0];
 let preTumourShpere:THREE.Mesh | undefined = undefined;
+let preSkinShpere:THREE.Mesh | undefined = undefined;
+let preRibShpere:THREE.Mesh | undefined = undefined;
 let segementTumour:any = undefined;
+let skinTree:any;
+let ribTree:any;
+let processedSkinPoints:number[][] = []
+let processedRibPoints:number[][] = []
 
 const { maskNrrd } = storeToRefs(useMaskNrrdStore());
 const { getMaskNrrd } = useMaskNrrdStore();
@@ -148,6 +156,7 @@ const { panelWidth } = toRefs(pr);
 watch(panelWidth, (newVal, oldVal) => {
   copperScene?.onWindowResize();
 });
+
 
 onMounted(() => {
   onEmitter();
@@ -349,8 +358,8 @@ function onEmitter() {
   emitter.on("drawSphere",(val)=>{
 
     if(!!preTumourShpere){
-      copperScene.scene.remove(preTumourShpere);
-      preTumourShpere = undefined;
+      copperScene.scene.remove(preTumourShpere, preSkinShpere as THREE.Mesh, preRibShpere as THREE.Mesh);
+      preTumourShpere = preSkinShpere = preRibShpere = undefined;
     }
     if(!!segementTumour){
       copperScene.scene.remove(segementTumour);
@@ -364,7 +373,7 @@ function onEmitter() {
     const spherePosition = [resetOrigin[0]+sphereData.sphereOriginMM[0], resetOrigin[1]+sphereData.sphereOriginMM[1], resetOrigin[2]+sphereData.sphereOriginMM[2]]
     
     sphereTumour.position.set(spherePosition[0], spherePosition[1],spherePosition[2])
-    copperScene.scene.add(sphereTumour)
+    
 
     loadNrrdSlices.x.index = tumourSliceIndex.x =
     loadNrrdSlices.x.RSAMaxIndex / 2 + sphereTumour.position.x;
@@ -376,8 +385,28 @@ function onEmitter() {
     loadNrrdSlices.y.repaint.call(loadNrrdSlices.y);
     loadNrrdSlices.z.repaint.call(loadNrrdSlices.z);
 
+
+    // console.log("skin:", skinPoints["Datapoints"])
+
+    // get closest point
+    
+    const skinidx = skinTree.nn(spherePosition)
+    const ribidx = ribTree.nn(spherePosition)
+    const commGeo = new THREE.SphereGeometry(5, 32, 16)
+
+    const skinSphere = new THREE.Mesh(commGeo, new THREE.MeshBasicMaterial({ color: "#FFFF00" }));
+    const ribSphere = new THREE.Mesh(commGeo, new THREE.MeshBasicMaterial({ color: "#00E5FF" }));
+
+    skinSphere.position.set(processedSkinPoints[skinidx][0],processedSkinPoints[skinidx][1], processedSkinPoints[skinidx][2])
+    ribSphere.position.set(processedRibPoints[ribidx][0],processedRibPoints[ribidx][1], processedRibPoints[ribidx][2])
+
+    copperScene.scene.add(sphereTumour, skinSphere, ribSphere)
     preTumourShpere = sphereTumour;
+    preSkinShpere = skinSphere;
+    preRibShpere = ribSphere;
     allRightPanelMeshes.push(sphereTumour);
+    allRightPanelMeshes.push(skinSphere)
+    allRightPanelMeshes.push(ribSphere)
   })
 }
 
@@ -463,8 +492,7 @@ function loadNrrd(url: string, url_1: string, right_panel_gui: any) {
             origin[0] + x_bias,
             origin[1] + y_bias,
             origin[2] + z_bias,
-          ];
-      
+          ];  
 
       // const a = createOriginSphere(origin,ras,spacing,x_bias,y_bias,z_bias);
       // copperScene.scene.add(...a)
@@ -565,6 +593,14 @@ async function loadBreastModel(
   await getNipplePoints(casename);
   const nippleResult = !!nipplePoints.value;
 
+
+  processedSkinPoints = producePoints(skinPoints["Datapoints"] as number[][], origin, spacing, dimensions, bias)
+  processedRibPoints = producePoints(ribPoints["Datapoints"] as number[][], origin, spacing, dimensions, bias)
+  
+  skinTree = createKDTree(processedSkinPoints);
+  ribTree = createKDTree(processedRibPoints);
+
+
   if (nippleResult) {
     const nipples = nipplePoints.value as INipplePoints;
     const l = nipples.nodes.left_nipple;
@@ -624,20 +660,40 @@ async function loadBreastModel(
   }
 
   // load breast model
-    // copperScene.loadOBJ("/prone_surface.obj", (content) => {
-    //   allRightPanelMeshes.push(content);
+    copperScene.loadOBJ("/prone_surface.obj", (content) => {
+      allRightPanelMeshes.push(content);
           
-    //   content.position.set(bias.x, bias.y, bias.z);
-    //   content.traverse((child) => {
-    //       if ((child as THREE.Mesh).isMesh) {
-    //         (child as THREE.Mesh).material = new THREE.MeshPhongMaterial({
-    //           side: THREE.DoubleSide,
-    //           wireframe:true,
-    //           color: "#827717",
-    //         });
-    //       }
-    //     });
-    // })
+      content.position.set(bias.x, bias.y, bias.z);
+      
+      content.traverse((child) => {
+          if ((child as THREE.Mesh).isMesh) {
+            (child as THREE.Mesh).material = new THREE.MeshPhongMaterial({
+              side: THREE.DoubleSide,
+              // wireframe:true,
+              transparent:true,
+              opacity:0.8,
+              color: "#795548",
+            });
+          }
+        });
+    })
+}
+
+function producePoints(points:number[][],origin: number[], spacing: number[], dimensions: number[], bias: THREE.Vector3){
+  const processedPoints:number[][] = []
+  points.forEach((point)=>{
+    // processedPoints.push(transformMeshPointToImageSpace(
+    //   point,
+    //   origin,
+    //   spacing,
+    //   dimensions,
+    //   bias
+    // ))
+    processedPoints.push([point[0]+bias.x, point[1]+bias.y, point[2]+bias.z])
+  })
+  
+   return processedPoints;
+
 }
 
 function removeOldMeshes(meshSet: THREE.Object3D<THREE.Event>[]) {
@@ -663,15 +719,21 @@ const resetSliceIndex = (sliceIndex: ISliceIndex) => {
   loadNrrdSlices.z.repaint.call(loadNrrdSlices.z);
 };
 
-const resetNrrdImage = () => {
+const backTo3DView = ()=>{
   panelOperator.dispose();
-  copperScene.loadViewUrl("/nrrd_view.json");
+  
   loadNrrdMeshes.x.visible = true;
   loadNrrdMeshes.y.visible = true;
   loadNrrdMeshes.z.visible = true;
   // valideClock(false, copperScene, right_panel.value as HTMLElement);
-  copperScene.controls.reset();
+  
   copperScene.controls.mouseButtons.LEFT = THREE.MOUSE.ROTATE;
+}
+
+const resetNrrdImage = () => {
+  copperScene.loadViewUrl("/nrrd_view.json");
+  copperScene.controls.reset();
+  backTo3DView();
   resetSliceIndex(tumourSliceIndex);
 };
 
@@ -711,9 +773,13 @@ const handleViewSigleClick = (view: string) => {
           //   loadNrrdMeshes
           // );
           break;
+        case "3dview":
+          backTo3DView()
+          break;
         case "reset":
           resetNrrdImage();
           break;
+        
       }
       clickCount = 0;
     }, 200);
@@ -721,6 +787,9 @@ const handleViewSigleClick = (view: string) => {
 };
 
 const handleViewsDoubleClick = (view: string) => {
+
+  if(view == "reset" || view == "3dview") return;
+  
   !!clickTimer && clearTimeout(clickTimer);
   clickCount = 0;
   copperScene.controls.mouseButtons.LEFT = -1;

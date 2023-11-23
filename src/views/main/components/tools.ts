@@ -200,3 +200,25 @@ export function throttle(callback: (event: MouseEvent) => void, wait: number) {
     }
   };
 }
+
+
+
+export function throttle2(func:Function, delay:number) {
+  let lastExecTime = 0;
+  let timeoutId:any;
+
+  return function (...args:any[]) {
+    const currentTime = Date.now();
+
+    if (currentTime - lastExecTime >= delay) {
+      func(...args);
+      lastExecTime = currentTime;
+    } else {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        func(...args);
+        lastExecTime = currentTime;
+      }, delay);
+    }
+  };
+}
