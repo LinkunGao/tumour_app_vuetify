@@ -140,10 +140,10 @@ export async function useMask(name: string) {
       });
   });
 }
-export async function useNipplePointsJson(name: string) {
+export async function useBreastPointsJson(name: string, filename:string) {
   return new Promise((resolve, reject) => {
     http
-      .get("/nipple_points", { name })
+      .get("/breast_points", { name, filename })
       .then((data) => {
         resolve(data);
       })

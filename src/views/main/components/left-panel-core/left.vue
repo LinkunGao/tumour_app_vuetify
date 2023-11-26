@@ -107,7 +107,7 @@ let allLoadedMeshes: Array<ILoadedMeshes> = [];
 let defaultRegAllMeshes: Array<ILoadedMeshes> = [];
 let originAllMeshes: Array<ILoadedMeshes> = [];
 let regCkeckbox: GUIController;
-let urls: Array<string> = [];
+let allContrastUrls: Array<string> = [];
 let loadedUrls: ILoadUrls = {};
 
 let filesCount = ref(0);
@@ -258,11 +258,11 @@ async function getInitData() {
 
 const readyToLoad = (urlsArray: Array<string>, name: string) => {
   fileNum.value = urlsArray.length;
-  urls = urlsArray;
-  if (urls.length > 0) {
+  allContrastUrls = urlsArray;
+  if (allContrastUrls.length > 0) {
     return new Promise<{ meshes: Array<Copper.nrrdMeshesType>; slices: any[] }>(
       (resolve, reject) => {
-        loadAllNrrds(urls, name, resolve, reject);
+        loadAllNrrds(allContrastUrls, name, resolve, reject);
       }
     );
   }
@@ -273,7 +273,7 @@ const onSaveMask = async (flag: boolean) => {
     switchAnimationStatus("flex", "Saving masks data, please wait......");
     await sendSaveMask(currentCaseId);
     switchAnimationStatus("none");
-    emitter.emit("saveMesh", true);
+    emitter.emit("syncTumourObjMesh", true);
   }
 };
 
@@ -428,7 +428,7 @@ watchEffect(() => {
   if (
     filesCount.value != 0 &&
     allSlices.length != 0 &&
-    filesCount.value === urls.length
+    filesCount.value === allContrastUrls.length
   ) {
     console.log("All files ready!");
 
@@ -642,9 +642,9 @@ async function onCaseSwitched(casename: string) {
     URL.revokeObjectURL(loadedUrls[casename].jsonUrl);
     await getMaskDataBackend(casename);
     loadedUrls[casename].jsonUrl = maskBackend.value;
-    urls = loadedUrls[casename].nrrdUrls;
+    allContrastUrls = loadedUrls[casename].nrrdUrls;
     if (!!caseUrls.value) {
-      caseUrls.value.nrrdUrls = urls;
+      caseUrls.value.nrrdUrls = allContrastUrls;
     }
   } else {
     
@@ -660,18 +660,18 @@ async function onCaseSwitched(casename: string) {
 
     if (!!caseUrls.value) {
       regUrls.value = caseUrls.value as ICaseUrls;
-      urls = caseUrls.value.nrrdUrls;
+      allContrastUrls = caseUrls.value.nrrdUrls;
       loadedUrls[currentCaseId] = caseUrls.value;
       const details = cases.value?.details;
       emitter.emit("casename", {
         currentCaseId,
         details,
-        maskNrrd: !!urls[1]?urls[1]:urls[0],
+        maskNrrd: !!allContrastUrls[1]?allContrastUrls[1]:allContrastUrls[0],
       });
     }
   }
 
-  readyToLoad(urls, "registration");
+  readyToLoad(allContrastUrls, "registration");
   loadCases = true;
 }
 
@@ -682,15 +682,16 @@ async function onRegistedStateChanged(isShowRegisterImage: boolean) {
   switchAnimationStatus("flex", "Prepare and Loading data, please wait......");
 
   if (!isShowRegisterImage) {
+    // show origin
     loadOrigin = true;
     if (originAllSlices.length > 0) {
       allSlices = [...originAllSlices];
       allLoadedMeshes = [...originAllMeshes];
-      filesCount.value = 5;
+      filesCount.value = allContrastUrls.length;
       emitter.emit("showRegBtnToRight", {
-        maskNrrdMeshes: originAllMeshes[1],
-        maskSlices: originAllSlices[1],
-        url: urls[1],
+        maskNrrdMeshes: !!originAllMeshes[1]?originAllMeshes[1]: originAllMeshes[0],
+        maskSlices: !!originAllSlices[1]?originAllSlices[1]:originAllSlices[0],
+        url: !!allContrastUrls[1]?allContrastUrls[1]:allContrastUrls[0],
         register: isShowRegisterImage,
       });
       return;
@@ -709,12 +710,12 @@ async function onRegistedStateChanged(isShowRegisterImage: boolean) {
     }
 
     if (!!originUrls.value?.nrrdUrls && originUrls.value?.nrrdUrls.length > 0) {
-      urls = originUrls.value.nrrdUrls;
-      readyToLoad(urls, "origin")?.then((data) => {
+      allContrastUrls = originUrls.value.nrrdUrls;
+      readyToLoad(allContrastUrls, "origin")?.then((data) => {
         emitter.emit("showRegBtnToRight", {
           maskNrrdMeshes: data.meshes[1],
           maskSlices: data.slices[1],
-          url: urls[1],
+          url:  !!allContrastUrls[1]?allContrastUrls[1]:allContrastUrls[0],
           register: isShowRegisterImage,
         });
       });
@@ -722,22 +723,18 @@ async function onRegistedStateChanged(isShowRegisterImage: boolean) {
   } else {
     loadOrigin = false;
     if (defaultRegAllSlices.length > 0) {
-      urls = regUrls.value.nrrdUrls;
+      allContrastUrls = regUrls.value.nrrdUrls;
       allSlices = [...defaultRegAllSlices];
       allLoadedMeshes = [...defaultRegAllMeshes];
+      filesCount.value = allContrastUrls.length;
       emitter.emit("showRegBtnToRight", {
-        maskNrrdMeshes: defaultRegAllMeshes[1],
-        maskSlices: defaultRegAllSlices[1],
-        url: urls[1],
+        maskNrrdMeshes: !!defaultRegAllMeshes[1]?defaultRegAllMeshes[1]:defaultRegAllMeshes[0],
+        maskSlices: !!defaultRegAllSlices[1]?defaultRegAllSlices[1]:defaultRegAllSlices[0],
+        url:  !!allContrastUrls[1]?allContrastUrls[1]:allContrastUrls[0],
         register: isShowRegisterImage,
       });
-      filesCount.value = 5;
       return;
     }
-    // if (caseUrls.value) {
-    //   urls = caseUrls.value.nrrdUrls;
-    //   readyToLoad(urls, "registration");
-    // }
   }
 }
 

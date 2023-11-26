@@ -12,7 +12,7 @@ import {
   useClearMaskMesh,
   useNrrdRegisterCase,
   useNrrdOriginCase,
-  useNipplePointsJson,
+  useBreastPointsJson,
   useNrrdCaseFiles,
   useSaveSphere,
 } from "@/plugins/api";
@@ -27,6 +27,7 @@ import {
   IMaskMesh,
   IRegRquest,
   INipplePoints,
+  IRibSkinPoints,
   IRequests,
 } from "@/models/apiTypes";
 export const useFileCountStore = defineStore("filesCount", () => {
@@ -132,10 +133,11 @@ export const useMaskStore = defineStore("getMasks", () => {
     getMaskDataBackend,
   };
 });
+
 export const useNipplePointsStore = defineStore("getNipplePoints", () => {
   const nipplePoints = ref<INipplePoints | Boolean>();
   const getNipplePoints = async (name: string) => {
-    nipplePoints.value = (await useNipplePointsJson(name)) as
+    nipplePoints.value = (await useBreastPointsJson(name, "nipple_points")) as
       | INipplePoints
       | boolean;
   };
@@ -144,6 +146,33 @@ export const useNipplePointsStore = defineStore("getNipplePoints", () => {
     getNipplePoints,
   };
 });
+
+export const useSkinPointsStore = defineStore("getSkinPoints", () => {
+  const skinPoints = ref<IRibSkinPoints | Boolean>();
+  const getSkinPoints = async (name: string) => {
+    skinPoints.value = (await useBreastPointsJson(name, "skin_mesh_surface_points")) as
+      | IRibSkinPoints
+      | boolean;
+  };
+  return {
+    skinPoints,
+    getSkinPoints,
+  };
+});
+
+export const useRibPointsStore = defineStore("getRibPoints", () => {
+  const ribPoints = ref<IRibSkinPoints | Boolean>();
+  const getRibPoints = async (name: string) => {
+    ribPoints.value = (await useBreastPointsJson(name, "outer_rib_mesh_surface_points")) as
+      | IRibSkinPoints
+      | boolean;
+  };
+  return {
+    ribPoints,
+    getRibPoints,
+  };
+});
+
 export const useMaskNrrdStore = defineStore("getMaskNrrd", () => {
   const maskNrrd = ref<string>();
   const getMaskNrrd = async (name: string) => {
