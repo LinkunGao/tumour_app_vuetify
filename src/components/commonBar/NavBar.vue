@@ -39,6 +39,8 @@
 <script setup lang="ts">
 import { ref, reactive, toRefs, watchEffect, onMounted } from "vue";
 import emitter from "@/plugins/bus";
+import {throttle2} from "@/views/main/components/tools";
+
 type Props = {
   fileNum: number;
   min?: number;
@@ -75,6 +77,8 @@ let filesNum = 0;
 let currentSliderNum = 0;
 let isAxis = false;
 let isFileChange = false;
+
+let timer:any = undefined;
 
 const emit = defineEmits([
   "onSliceChange",
@@ -129,7 +133,7 @@ const onChangeSlider = () => {
   const step = sliceNum.value - currentSliderNum;
   currentSliderNum += step;
   if (!isAxis && !isFileChange) {
-    emit("onSliceChange", step);
+    setTimeout(()=>{emit("onSliceChange", step);},1);  
   }
   isAxis = false;
   isFileChange = false;

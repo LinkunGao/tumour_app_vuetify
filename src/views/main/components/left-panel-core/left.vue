@@ -14,8 +14,8 @@
   </div>
   <div
     v-show="panelWidth >= 600 ? true : false"
-    class="nav_bar_container"
-    ref="nav_bar_container"
+    class="nav_bar_left_container"
+    ref="nav_bar_left_container"
   >
     <NavBar
       :file-num="fileNum"
@@ -33,9 +33,9 @@
 </template>
 <script setup lang="ts">
 import { GUI, GUIController } from "dat.gui";
-// import * as Copper from "copper3d";
+import * as Copper from "copper3d";
 import "copper3d/dist/css/style.css";
-import * as Copper from "@/ts/index";
+// import * as Copper from "@/ts/index";
 import loadingGif from "@/assets/loading.svg";
 
 import NavBar from "@/components/commonBar/NavBar.vue";
@@ -88,7 +88,7 @@ let dialog = ref(false);
 let base_container = ref<HTMLDivElement>();
 let c_gui = ref<HTMLDivElement>();
 let canvas_container = ref<HTMLDivElement>();
-let nav_bar_container = ref<HTMLDivElement>();
+let nav_bar_left_container = ref<HTMLDivElement>();
 let slice_index_container = ref<HTMLDivElement>();
 let debug_mode = ref(false);
 
@@ -181,9 +181,9 @@ function onEmitter() {
   });
   emitter.on("leftFullScreen", (flag) => {
     if (flag) {
-      (nav_bar_container.value as HTMLDivElement).style.width = "90%";
+      (nav_bar_left_container.value as HTMLDivElement).style.width = "90%";
     } else {
-      (nav_bar_container.value as HTMLDivElement).style.width = "60%";
+      (nav_bar_left_container.value as HTMLDivElement).style.width = "60%";
     }
   });
   // emitter.on("containerHight", (h) => {
@@ -313,8 +313,6 @@ const sendInitMaskToBackend = async () => {
   const height = dimensions[1];
   const voxelSpacing = nrrdTools.getVoxelSpacing();
   const spaceOrigin = nrrdTools.getSpaceOrigin();
-
-  console.log("spaceOrigin", spaceOrigin);
   
   
   if (len > 0) {
@@ -389,9 +387,14 @@ const getSphereData = async (sphereOrigin: number[], sphereRadius: number) => {
   const sphereData: ISaveSphere = {
     caseId: currentCaseId,
     sliceId: sphereOrigin[2],
+    origin: nrrdTools.nrrd_states.spaceOrigin,
+    spacing: nrrdTools.nrrd_states.voxelSpacing,
     sphereRadiusMM: sphereRadius,
-    sphereOriginMM: sphereOrigin,
+    sphereOriginMM: [sphereOrigin[0],sphereOrigin[1],sphereOrigin[2]*nrrdTools.nrrd_states.voxelSpacing[2]],
   };
+
+  emitter.emit("drawSphere",sphereData);
+
   await sendSaveSphere(sphereData);
 };
 
@@ -663,7 +666,7 @@ async function onCaseSwitched(casename: string) {
       emitter.emit("casename", {
         currentCaseId,
         details,
-        maskNrrd: urls[1],
+        maskNrrd: !!urls[1]?urls[1]:urls[0],
       });
     }
   }
@@ -815,7 +818,7 @@ function switchRegCheckBoxStatus(
   align-items: center;
 }
 
-.nav_bar_container {
+.nav_bar_left_container {
   flex: 1;
   display: flex;
   align-items: center;

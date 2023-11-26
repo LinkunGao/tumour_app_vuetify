@@ -1,5 +1,5 @@
 <template>
-  <div id="bg_2" ref="bg">
+  <div id="right_panel" ref="right_panel">
     <div v-show="openLoading" ref="loading_c" class="loading">
       <div class="loading_text text-cyan-darken-3">Load tumour model...</div>
     </div>
@@ -18,9 +18,9 @@
       </div>
     </v-card>
     <div></div>
-    <div ref="c_gui" id="gui"></div>
+    <div ref="right_panel_gui" id="gui"></div>
   </div>
-  <div v-show="panelWidth >= 350 ? true : false" class="nav_bar_container" ref="nav_bar_container">
+  <div v-show="panelWidth >= 410 ? true : false" class="nav_bar_right_container" ref="nav_bar_right_container">
 
       <NavBarRight
         @on-view-single-click="handleViewSigleClick"
@@ -33,10 +33,12 @@
 <script setup lang="ts">
 import { GUI } from "dat.gui";
 import * as THREE from "three";
-// import * as Copper from "copper3d";
+import * as Copper from "copper3d";
 import "copper3d/dist/css/style.css";
-// import createKDTree from "copper3d-tree";
-import * as Copper from "@/ts/index";
+import createKDTree from "copper3d-tree";
+import skinPoints from "@/assets/data/skin_mesh_surface_points"
+import ribPoints from "@/assets/data/outer_rib_mesh_surface_points"
+// import * as Copper from "@/ts/index";
 import {
   getCurrentInstance,
   onMounted,
@@ -61,11 +63,13 @@ import {
   ISliceIndex,
   ILeftRightData,
   INipplePoints,
+  ISaveSphere
 } from "@/models/apiTypes";
 import {
   findCurrentCase,
   transformMeshPointToImageSpace,
   getClosestNipple,
+  createOriginSphere
 } from "@/views/main/components/tools";
 import { PanelOperationManager, valideClock, deepClone } from "./utils-right";
 import loadingGif from "@/assets/loading.svg";
@@ -74,11 +78,10 @@ type Props = {
   panelWidth: number;
 };
 
-let refs = null;
-let bg = ref<HTMLDivElement>();
+let right_panel = ref<HTMLDivElement>();
 let appRenderer: Copper.copperRenderer;
 let panelOperator: PanelOperationManager;
-let c_gui: HTMLDivElement = ref<any>(null);
+let right_panel_gui = ref<HTMLDivElement>();
 let loading_c = ref<HTMLDivElement>();
 let loadBar1: Copper.loadingBarType;
 let casename: string;
@@ -123,6 +126,16 @@ let clickCount = 0;
 let clickTimer: any = null;
 let validFlag = false;
 
+let resetOrigin = [0,0,0];
+let preTumourShpere:THREE.Mesh | undefined = undefined;
+let preSkinShpere:THREE.Mesh | undefined = undefined;
+let preRibShpere:THREE.Mesh | undefined = undefined;
+let segementTumour:any = undefined;
+let skinTree:any;
+let ribTree:any;
+let processedSkinPoints:number[][] = []
+let processedRibPoints:number[][] = []
+
 const { maskNrrd } = storeToRefs(useMaskNrrdStore());
 const { getMaskNrrd } = useMaskNrrdStore();
 const { maskMeshObj } = storeToRefs(useMaskMeshObjStore());
@@ -144,12 +157,12 @@ watch(panelWidth, (newVal, oldVal) => {
   copperScene?.onWindowResize();
 });
 
+
 onMounted(() => {
   onEmitter();
-  let { $refs } = (getCurrentInstance() as any).proxy;
-  refs = $refs;
-  // bg = refs.base_container_2;
-  c_gui = refs.c_gui;
+  // let { $refs } = (getCurrentInstance() as any).proxy;
+  // refs = $refs;
+  // right_panel = refs.base_container_2;
 
   loadBarMain = Copper.loading(loadingGif);
 
@@ -165,7 +178,7 @@ onMounted(() => {
     if (typeof event.data === "string") {
       if (event.data === "delete") {
         volume.value = 0;
-        loadNrrd(maskNrrd.value as string, "", c_gui);
+        loadNrrd(maskNrrd.value as string, "", right_panel_gui.value);
       } else {
         const volumeJson = JSON.parse(event.data);
         volume.value = Math.ceil(volumeJson.volume) / 1000;
@@ -181,19 +194,19 @@ onMounted(() => {
       loadNrrd(
         maskNrrd.value as string,
         maskMeshObj.value.maskMeshObjUrl as string,
-        c_gui
+        right_panel_gui.value
       );
       loadingContainer.style.display = "none";
     }
     openLoading.value = false;
   };
 
-  appRenderer = new Copper.copperRenderer(bg.value as HTMLDivElement, {
+  appRenderer = new Copper.copperRenderer(right_panel.value as HTMLDivElement, {
     guiOpen: false,
     alpha: true,
     logarithmicDepthBuffer: true,
   });
-  panelOperator = new PanelOperationManager(bg.value as HTMLDivElement);
+  panelOperator = new PanelOperationManager(right_panel.value as HTMLDivElement);
 
   loadBar1 = Copper.loading(loadingGif);
 
@@ -206,7 +219,7 @@ onMounted(() => {
 
 function onEmitter() {
   emitter.on("containerHight", (h) => {
-    (bg.value as HTMLDivElement).style.height = `${h}vh`;
+    (right_panel.value as HTMLDivElement).style.height = `${h}vh`;
   });
   emitter.on("saveMesh", () => {
     loadingContainer.style.display = "flex";
@@ -233,11 +246,11 @@ function onEmitter() {
       loadNrrd(
         maskNrrd.value as string,
         maskMeshObj.value.maskMeshObjUrl as string,
-        c_gui
+        right_panel_gui.value
       );
-      // loadNrrd(maskNrrd.value as string, "/Tumour_App_Vuetify/mesh_spacing.obj" as string, c_gui);
+      // loadNrrd(maskNrrd.value as string, "/Tumour_App_Vuetify/mesh_spacing.obj" as string, right_panel_gui.value);
     } else {
-      loadNrrd(maskNrrd.value as string, "", c_gui);
+      loadNrrd(maskNrrd.value as string, "", right_panel_gui.value);
       initPanelValue();
     }
   });
@@ -341,12 +354,66 @@ function onEmitter() {
       }, 1000);
     }
   });
+
+  emitter.on("drawSphere",(val)=>{
+
+    if(!!preTumourShpere){
+      copperScene.scene.remove(preTumourShpere, preSkinShpere as THREE.Mesh, preRibShpere as THREE.Mesh);
+      preTumourShpere = preSkinShpere = preRibShpere = undefined;
+    }
+    if(!!segementTumour){
+      copperScene.scene.remove(segementTumour);
+    }
+
+    const sphereData = val as ISaveSphere
+    const geometry = new THREE.SphereGeometry(sphereData.sphereRadiusMM, 32, 16);
+    const material = new THREE.MeshBasicMaterial({ color: "#228b22" });
+
+    const sphereTumour = new THREE.Mesh(geometry, material);
+    const spherePosition = [resetOrigin[0]+sphereData.sphereOriginMM[0], resetOrigin[1]+sphereData.sphereOriginMM[1], resetOrigin[2]+sphereData.sphereOriginMM[2]]
+    
+    sphereTumour.position.set(spherePosition[0], spherePosition[1],spherePosition[2])
+    
+
+    loadNrrdSlices.x.index = tumourSliceIndex.x =
+    loadNrrdSlices.x.RSAMaxIndex / 2 + sphereTumour.position.x;
+    loadNrrdSlices.y.index = tumourSliceIndex.y =
+    loadNrrdSlices.y.RSAMaxIndex / 2 + sphereTumour.position.y;
+    loadNrrdSlices.z.index = tumourSliceIndex.z =
+    loadNrrdSlices.z.RSAMaxIndex / 2 + sphereTumour.position.z;
+    loadNrrdSlices.x.repaint.call(loadNrrdSlices.x);
+    loadNrrdSlices.y.repaint.call(loadNrrdSlices.y);
+    loadNrrdSlices.z.repaint.call(loadNrrdSlices.z);
+
+
+    // console.log("skin:", skinPoints["Datapoints"])
+
+    // get closest point
+    
+    const skinidx = skinTree.nn(spherePosition)
+    const ribidx = ribTree.nn(spherePosition)
+    const commGeo = new THREE.SphereGeometry(5, 32, 16)
+
+    const skinSphere = new THREE.Mesh(commGeo, new THREE.MeshBasicMaterial({ color: "#FFFF00" }));
+    const ribSphere = new THREE.Mesh(commGeo, new THREE.MeshBasicMaterial({ color: "#00E5FF" }));
+
+    skinSphere.position.set(processedSkinPoints[skinidx][0],processedSkinPoints[skinidx][1], processedSkinPoints[skinidx][2])
+    ribSphere.position.set(processedRibPoints[ribidx][0],processedRibPoints[ribidx][1], processedRibPoints[ribidx][2])
+
+    copperScene.scene.add(sphereTumour, skinSphere, ribSphere)
+    preTumourShpere = sphereTumour;
+    preSkinShpere = skinSphere;
+    preRibShpere = ribSphere;
+    allRightPanelMeshes.push(sphereTumour);
+    allRightPanelMeshes.push(skinSphere)
+    allRightPanelMeshes.push(ribSphere)
+  })
 }
 
 // async function getMaskNrrdHandle() {
 //   if (casename) {
 //     await getMaskNrrd(casename);
-//     loadNrrd(maskNrrd.value as string,"/Tumour_App_Vuetify/mask.obj", c_gui);
+//     loadNrrd(maskNrrd.value as string,"/Tumour_App_Vuetify/mask.obj", right_panel_gui.value);
 //   }
 // }
 
@@ -387,17 +454,18 @@ function initScene(name: string) {
   }
 }
 
-function loadNrrd(url: string, url_1: string, c_gui: any) {
+function loadNrrd(url: string, url_1: string, right_panel_gui: any) {
   removeOldMeshes(allRightPanelMeshes);
   registrationMeshes = undefined;
   originMeshes = undefined;
   registrationSlices = undefined;
   originSlices = undefined;
+  preTumourShpere = undefined;
 
   // remove GUI
   const opts: Copper.optsType = {
     openGui: false,
-    // container: c_gui,
+    // container: right_panel_gui.value,
   };
   if (!!copperScene) {
     const nrrdCallback = async (
@@ -419,9 +487,16 @@ function loadNrrd(url: string, url_1: string, c_gui: any) {
       const y_bias = -(origin[1] * 2 + ras[1]) / 2;
       const z_bias = -(origin[2] * 2 + ras[2]) / 2;
       
-      
 
-      // createOriginSphere(origin,ras,spacing,x_bias,y_bias,z_bias);
+      resetOrigin = [
+            origin[0] + x_bias,
+            origin[1] + y_bias,
+            origin[2] + z_bias,
+          ];  
+
+      // const a = createOriginSphere(origin,ras,spacing,x_bias,y_bias,z_bias);
+      // copperScene.scene.add(...a)
+
       loadNrrdMeshes = registrationMeshes = nrrdMesh;
       loadNrrdSlices = registrationSlices = nrrdSlices;
       const bias = new THREE.Vector3(x_bias, y_bias, z_bias);
@@ -440,12 +515,10 @@ function loadNrrd(url: string, url_1: string, c_gui: any) {
       copperScene.controls.panSpeed = 0.5;
 
       if (url_1) {
-
-        // copperScene.loadVtk("/prone_surface.vtk")
-
         copperScene.loadOBJ(url_1, (content) => {
           allRightPanelMeshes.push(content);
           
+          segementTumour = content;
           content.position.set(bias.x, bias.y, bias.z);
           const tumourMesh = content.children[0] as THREE.Mesh;
           const tumourMaterial =
@@ -520,6 +593,14 @@ async function loadBreastModel(
   await getNipplePoints(casename);
   const nippleResult = !!nipplePoints.value;
 
+
+  processedSkinPoints = producePoints(skinPoints["Datapoints"] as number[][], origin, spacing, dimensions, bias)
+  processedRibPoints = producePoints(ribPoints["Datapoints"] as number[][], origin, spacing, dimensions, bias)
+  
+  skinTree = createKDTree(processedSkinPoints);
+  ribTree = createKDTree(processedRibPoints);
+
+
   if (nippleResult) {
     const nipples = nipplePoints.value as INipplePoints;
     const l = nipples.nodes.left_nipple;
@@ -577,6 +658,42 @@ async function loadBreastModel(
     allRightPanelMeshes.push(sphereL);
     allRightPanelMeshes.push(sphereR);
   }
+
+  // load breast model
+    copperScene.loadOBJ("/prone_surface.obj", (content) => {
+      allRightPanelMeshes.push(content);
+          
+      content.position.set(bias.x, bias.y, bias.z);
+      
+      content.traverse((child) => {
+          if ((child as THREE.Mesh).isMesh) {
+            (child as THREE.Mesh).material = new THREE.MeshPhongMaterial({
+              side: THREE.DoubleSide,
+              // wireframe:true,
+              transparent:true,
+              opacity:0.8,
+              color: "#795548",
+            });
+          }
+        });
+    })
+}
+
+function producePoints(points:number[][],origin: number[], spacing: number[], dimensions: number[], bias: THREE.Vector3){
+  const processedPoints:number[][] = []
+  points.forEach((point)=>{
+    // processedPoints.push(transformMeshPointToImageSpace(
+    //   point,
+    //   origin,
+    //   spacing,
+    //   dimensions,
+    //   bias
+    // ))
+    processedPoints.push([point[0]+bias.x, point[1]+bias.y, point[2]+bias.z])
+  })
+  
+   return processedPoints;
+
 }
 
 function removeOldMeshes(meshSet: THREE.Object3D<THREE.Event>[]) {
@@ -602,15 +719,21 @@ const resetSliceIndex = (sliceIndex: ISliceIndex) => {
   loadNrrdSlices.z.repaint.call(loadNrrdSlices.z);
 };
 
-const resetNrrdImage = () => {
+const backTo3DView = ()=>{
   panelOperator.dispose();
-  copperScene.loadViewUrl("/nrrd_view.json");
+  
   loadNrrdMeshes.x.visible = true;
   loadNrrdMeshes.y.visible = true;
   loadNrrdMeshes.z.visible = true;
-  // valideClock(false, copperScene, bg.value as HTMLElement);
-  copperScene.controls.reset();
+  // valideClock(false, copperScene, right_panel.value as HTMLElement);
+  
   copperScene.controls.mouseButtons.LEFT = THREE.MOUSE.ROTATE;
+}
+
+const resetNrrdImage = () => {
+  copperScene.loadViewUrl("/nrrd_view.json");
+  copperScene.controls.reset();
+  backTo3DView();
   resetSliceIndex(tumourSliceIndex);
 };
 
@@ -644,15 +767,19 @@ const handleViewSigleClick = (view: string) => {
           // valideClock(
           //   validFlag,
           //   copperScene,
-          //   bg.value as HTMLElement,
+          //   right_panel.value as HTMLElement,
           //   nippleTl,
           //   nippleTr,
           //   loadNrrdMeshes
           // );
           break;
+        case "3dview":
+          backTo3DView()
+          break;
         case "reset":
           resetNrrdImage();
           break;
+        
       }
       clickCount = 0;
     }, 200);
@@ -660,6 +787,9 @@ const handleViewSigleClick = (view: string) => {
 };
 
 const handleViewsDoubleClick = (view: string) => {
+
+  if(view == "reset" || view == "3dview") return;
+  
   !!clickTimer && clearTimeout(clickTimer);
   clickCount = 0;
   copperScene.controls.mouseButtons.LEFT = -1;
@@ -693,7 +823,7 @@ const handleViewsDoubleClick = (view: string) => {
 </script>
 
 <style scoped>
-#bg_2 {
+#right_panel {
   width: 95%;
   flex: 0 0 90%;
   position: relative;
@@ -709,7 +839,7 @@ const handleViewsDoubleClick = (view: string) => {
   right: 0;
 }
 
-.nav_bar_container {
+.nav_bar_right_container {
   flex: 1;
   display: flex;
   align-items: center;

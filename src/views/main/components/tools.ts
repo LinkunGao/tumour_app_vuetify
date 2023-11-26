@@ -103,7 +103,7 @@ export function createOriginSphere(
     origin[1] + y_bias,
     origin[2] + z_bias,
   ];
-
+  
   spherelt.position.set(resetOrigin[0], resetOrigin[1], resetOrigin[2]);
   spherert.position.set(
     resetOrigin[0] + ras[0],
@@ -197,6 +197,28 @@ export function throttle(callback: (event: MouseEvent) => void, wait: number) {
     if (current - start > wait) {
       callback.call(null, event);
       start = current;
+    }
+  };
+}
+
+
+
+export function throttle2(func:Function, delay:number) {
+  let lastExecTime = 0;
+  let timeoutId:any;
+
+  return function (...args:any[]) {
+    const currentTime = Date.now();
+
+    if (currentTime - lastExecTime >= delay) {
+      func(...args);
+      lastExecTime = currentTime;
+    } else {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        func(...args);
+        lastExecTime = currentTime;
+      }, delay);
     }
   };
 }

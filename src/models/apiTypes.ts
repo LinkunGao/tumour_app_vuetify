@@ -46,6 +46,8 @@ export interface IReplaceMask {
 export interface ISaveSphere {
   caseId: string;
   sliceId: number;
+  origin: number[];
+  spacing: number[];
   sphereRadiusMM: number;
   sphereOriginMM: number[];
 }

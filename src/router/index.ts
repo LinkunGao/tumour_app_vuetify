@@ -17,18 +17,20 @@ const routes = [
         // this generates a separate chunk (about.[hash].js) for this route
         // which is lazy-loaded when the route is visited.
         component: () =>
-          import(/* webpackChunkName: "home" */ "@/views/main/MainPage.vue"),
+          import(/* webpackChunkName: "MainPage" */ "@/views/main/MainPage.vue"),
       },
     ],
   },
 ];
+
+// use for the github repo
 
 const router = createRouter({
   history: createWebHistory(process.env.BASE_URL),
   routes,
 });
 
-export default router;
+// export default router;
 
 // const router = createRouter({
 //   history: createWebHashHistory(),
@@ -44,4 +46,4 @@ export default router;
 //   routes,
 // });
 
-// export default router;
+export default router;

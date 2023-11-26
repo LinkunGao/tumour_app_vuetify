@@ -7,13 +7,20 @@
           @click.stop="onSigleClick(item.label)"
           @dblclick.stop="onDoubleClick(item.label)"
         >
-          <i v-if="item.label !== 'reset'">
+          
+          <i class="switch_font" v-if="item.label=='reset'">
+            <ion-icon name="refresh-outline"></ion-icon>
+          </i>
+
+          <i class="switch_font" v-else-if="item.label=='3dview'">
+            <ion-icon name="walk-outline"></ion-icon>
+          </i>
+
+          <i v-else>
             <img class="image" v-if="darkMode" :src="item.img_white" alt="" />
             <img class="image" v-else :src="item.img_blank" alt="" />
           </i>
-          <i class="switch_font" v-else>
-            <ion-icon name="refresh-outline"></ion-icon>
-          </i>
+
           <v-tooltip activator="parent" location="top">{{
             item.name
           }}</v-tooltip>
@@ -59,11 +66,18 @@ const viewData = [
   // label:"clock",
   // img:clockImg
   // },
+ 
+  {
+    name: "3D view",
+    label: "3dview",
+    image:null,
+  },
   {
     name: "Reset views",
     label: "reset",
     img: resetImg,
   },
+
 ];
 
 const darkMode = ref(true);
@@ -177,6 +191,7 @@ onMounted(() => {
 }
 .switch_font {
   font-size: 1em;
+  pointer-events: none;
 }
 .switch_font:active {
   font-size: 1em;

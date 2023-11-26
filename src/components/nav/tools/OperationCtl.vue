@@ -117,6 +117,7 @@ import emitter from "@/plugins/bus";
 // Functional Controls
 const commFuncRadios = ref("segmentation");
 const commFuncRadiosDisabled = ref(true);
+const prebtn = ref("segmentation")
 
 // Slider Controls
 const commSliderRadios = ref("");
@@ -138,7 +139,7 @@ const guiSettings = ref<any>();
 
 const commFuncRadioValues = ref([
   { label: "Pencil", value: "segmentation", color: "success" },
-  { label: "Spere", value: "sphere", color: "warning" },
+  { label: "Sphere", value: "sphere", color: "warning" },
   { label: "Eraser", value: "Eraser", color: "error" },
   { label: "Brush", value: "brush", color: "info" },
 ]);
@@ -215,6 +216,11 @@ function toggleFuncRadios(val: any) {
     }
   }
 
+  if(prebtn.value==="sphere" && prebtn!==val){
+    guiSettings.value.guiSetting["sphere"].onChange();
+  }
+
+  prebtn.value=val;
   guiSettings.value.guiSetting[commFuncRadios.value].onChange();
 }
 
