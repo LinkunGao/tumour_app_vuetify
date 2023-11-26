@@ -185,6 +185,23 @@ export async function useMaskObjMesh(name: string) {
       });
   });
 }
+
+export async function useBreastObjMesh(name: string) {
+  return new Promise<string>((resolve, reject) => {
+    http
+      .getBlob("/breast_model", { name })
+      .then((res) => {
+        const breastMeshObjUrl = URL.createObjectURL(
+          new Blob([res as BlobPart])
+        );
+        resolve(breastMeshObjUrl);
+      })
+      .catch((error) => {
+        reject(error);
+      });
+  });
+}
+
 export async function useClearMaskMesh(name: string) {
   let res = http.get<string>("/clearmesh", { name });
   return res;

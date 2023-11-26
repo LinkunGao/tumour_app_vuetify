@@ -9,6 +9,7 @@ import {
   useMask,
   useMaskNrrd,
   useMaskObjMesh,
+  useBreastObjMesh,
   useClearMaskMesh,
   useNrrdRegisterCase,
   useNrrdOriginCase,
@@ -183,6 +184,7 @@ export const useMaskNrrdStore = defineStore("getMaskNrrd", () => {
     getMaskNrrd,
   };
 });
+
 export const useMaskMeshObjStore = defineStore("getMaskMesh", () => {
   const maskMeshObj = ref<IMaskMesh>({});
   const getMaskMeshObj = async (name: string) => {
@@ -193,6 +195,18 @@ export const useMaskMeshObjStore = defineStore("getMaskMesh", () => {
     getMaskMeshObj,
   };
 });
+
+export const useBreastMeshObjStore = defineStore("getBreastMesh", () => {
+  const breastMeshObj = ref<string>();
+  const getBreastMeshObj = async (name: string) => {
+    breastMeshObj.value = (await useBreastObjMesh(name)) as string;
+  };
+  return {
+    breastMeshObj,
+    getBreastMeshObj,
+  };
+});
+
 export const useClearMaskMeshStore = defineStore("clearMaskMesh", () => {
   const clearMeshResult = ref<string>();
   const clearMaskMeshObj = async (name: string) => {

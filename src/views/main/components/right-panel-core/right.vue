@@ -53,6 +53,7 @@ import { storeToRefs } from "pinia";
 import {
   useMaskNrrdStore,
   useMaskMeshObjStore,
+  useBreastMeshObjStore,
   useNipplePointsStore,
   useRibPointsStore,
   useSkinPointsStore
@@ -156,6 +157,8 @@ const { maskNrrd } = storeToRefs(useMaskNrrdStore());
 const { getMaskNrrd } = useMaskNrrdStore();
 const { maskMeshObj } = storeToRefs(useMaskMeshObjStore());
 const { getMaskMeshObj } = useMaskMeshObjStore();
+const { breastMeshObj } = storeToRefs(useBreastMeshObjStore());
+const { getBreastMeshObj } = useBreastMeshObjStore();
 const { nipplePoints } = storeToRefs(useNipplePointsStore());
 const { getNipplePoints } = useNipplePointsStore();
 const { skinPoints } = storeToRefs(useSkinPointsStore());
@@ -216,7 +219,11 @@ function initSocket(){
         tumourVolume.value = 0;
         if (!!segementTumour3DModel) copperScene.scene.remove(segementTumour3DModel);
         segementTumour3DModel = undefined;
-        // loadNrrd(maskNrrd.value as string, "", right_panel_gui.value);
+
+        copperScene.scene.remove(ribSphere);
+        copperScene.scene.remove(skinSphere);
+
+        initPanelValue();
       } else {
         const volumeJson = JSON.parse(event.data);
         tumourVolume.value = Math.ceil(volumeJson.volume) / 1000;
@@ -340,9 +347,9 @@ function onEmitter() {
     // 2.2 Load Nrrd
 
     loadNrrd(maskNrrd.value as string, "register")?.then(async (nrrdData)=>{
-      // console.log(nrrdData);
       await getSkinPoints(case_infos.currentCaseId);
       await getRibPoints(case_infos.currentCaseId);
+      await getBreastMeshObj(case_infos.currentCaseId);
       
       if(!!skinPoints.value){
         const skinPointCloud = skinPoints.value as IRibSkinPoints
@@ -497,8 +504,6 @@ function onEmitter() {
     allRightPanelMeshes.push(sphereTumour);
 
     // get closest point
-    // displaySkinAndRib(spherePosition)
-    // updateTumourPanelInfo(tumourPosition as THREE.Vector3)
     displayAndCalculateNSR();
   })
 
@@ -534,8 +539,6 @@ function loadNrrd(nrrdUrl: string, name:"register"|"origin") {
     openGui: false,
     // container: right_panel_gui.value,
   };
-  
-  
   
   return new Promise<{ origin: number[], spacing: number[],  ras: number[], dimensions:number[], bias: THREE.Vector3}>((resolve, reject) => {
     const nrrdCallback = async (
@@ -577,7 +580,13 @@ function loadNrrd(nrrdUrl: string, name:"register"|"origin") {
       loadNrrdMeshes = originMeshes = nrrdMesh;
       loadNrrdSlices = originSlices = nrrdSlices;
     }
-    
+  
+    loadNrrdSlices.x.index = loadNrrdSlices.x.RSAMaxIndex / 2;
+    loadNrrdSlices.y.index = loadNrrdSlices.y.RSAMaxIndex / 2;
+    loadNrrdSlices.z.index = loadNrrdSlices.z.RSAMaxIndex / 2;
+    loadNrrdSlices.x.repaint.call(loadNrrdSlices.x);
+    loadNrrdSlices.y.repaint.call(loadNrrdSlices.y);
+    loadNrrdSlices.z.repaint.call(loadNrrdSlices.z);
     
     nrrdMesh.x.name = "Sagittal";
     nrrdMesh.y.name = "Cornal";
@@ -586,6 +595,8 @@ function loadNrrd(nrrdUrl: string, name:"register"|"origin") {
     copperScene.addObject(nrrdMesh.y);
     copperScene.addObject(nrrdMesh.z);
     allRightPanelMeshes.push(nrrdMesh.x, nrrdMesh.y, nrrdMesh.z);
+
+    
 
     !!resolve && resolve({ origin: nrrdOrigin, spacing: nrrdSpacing,  ras: nrrdRas, dimensions:nrrdDimensions, bias: nrrdBias});
 
@@ -644,7 +655,9 @@ async function loadBreastModel() {
   }
 
   // load breast model
-    copperScene.loadOBJ("/prone_surface.obj", (content) => {
+
+  if(!!breastMeshObj.value){
+    copperScene.loadOBJ(breastMeshObj.value as string, (content) => {
       breast3DModel = content
       allRightPanelMeshes.push(content);
       content.position.set(nrrdBias.x, nrrdBias.y, nrrdBias.z);
@@ -661,6 +674,7 @@ async function loadBreastModel() {
           }
         });
     })
+  }
 }
 
 function loadSegmentTumour(tomourUrl:string){
@@ -690,9 +704,10 @@ function loadSegmentTumour(tomourUrl:string){
 
   tumourPosition = box.getCenter(new THREE.Vector3());
   // reset nrrd slice
-  loadNrrdSlices.x.index = loadNrrdSlices.x.RSAMaxIndex / 2 + tumourPosition.x;
-  loadNrrdSlices.y.index = loadNrrdSlices.y.RSAMaxIndex / 2 + tumourPosition.y;
-  loadNrrdSlices.z.index = loadNrrdSlices.z.RSAMaxIndex / 2 + tumourPosition.z;
+  
+  loadNrrdSlices.x.index += tumourPosition.x;
+  loadNrrdSlices.y.index += tumourPosition.y;
+  loadNrrdSlices.z.index += tumourPosition.z;
   loadNrrdSlices.x.repaint.call(loadNrrdSlices.x);
   loadNrrdSlices.y.repaint.call(loadNrrdSlices.y);
   loadNrrdSlices.z.repaint.call(loadNrrdSlices.z);
@@ -867,8 +882,8 @@ function removeOldMeshes(meshSet: THREE.Object3D<THREE.Event>[]) {
   }
 }
 
-const resetSliceIndex = (sliceIndex: ISliceIndex | undefined) => {
-  if(sliceIndex == undefined) return;
+const resetSliceIndex = (sliceIndex: ISliceIndex) => {
+  if(sliceIndex.x === 0 && sliceIndex.y === 0 && sliceIndex.z ===0 ) return;
   loadNrrdSlices.x.index = sliceIndex.x;
   loadNrrdSlices.y.index = sliceIndex.y;
   loadNrrdSlices.z.index = sliceIndex.z;
