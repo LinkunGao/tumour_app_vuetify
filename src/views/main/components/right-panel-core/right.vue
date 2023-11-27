@@ -231,13 +231,15 @@ function initSocket(){
       clearInterval(socketTimer as NodeJS.Timer);
     } else {
       if(!!maskMeshObj.value.maskMeshObjUrl){
+        console.log("remove old mesh");
+        
         URL.revokeObjectURL(maskMeshObj.value.maskMeshObjUrl)
       }
       const blob = new Blob([event.data], { type: "model/obj" });
       const url = URL.createObjectURL(blob);
-      maskMeshObj.value.maskMeshObjUrl = url;
+      if(!!maskMeshObj.value.maskMeshObjUrl) maskMeshObj.value.maskMeshObjUrl = url;
 
-      loadSegmentTumour(maskMeshObj.value.maskMeshObjUrl)
+      loadSegmentTumour(url)
       loadingContainer.style.display = "none";
     }
     openLoading.value = false;
@@ -365,17 +367,19 @@ function onEmitter() {
       loadBreastModel()
       // 2.4 Load tumour obj model if has
 
-      if (case_detail.has_mesh) {
+
         if(!!maskMeshObj.value.maskMeshObjUrl){
           URL.revokeObjectURL(maskMeshObj.value.maskMeshObjUrl)
         }
         await getMaskMeshObj(casename);
-        tumourVolume.value = Math.ceil(maskMeshObj.value.meshVolume as number) / 1000;
-        // maskMeshObj.value.maskMeshObjUrl as string
         
-        // 2.4 load tumour model
-        loadSegmentTumour(maskMeshObj.value.maskMeshObjUrl as string)
-      } 
+        if(!!maskMeshObj.value){
+          tumourVolume.value = Math.ceil(maskMeshObj.value.meshVolume as number) / 1000;
+          // maskMeshObj.value.maskMeshObjUrl as string
+          
+          // 2.4 load tumour model
+          loadSegmentTumour(maskMeshObj.value.maskMeshObjUrl as string)
+        } 
     });
 
     
@@ -691,23 +695,23 @@ function loadSegmentTumour(tomourUrl:string){
   segementTumour3DModel = content;
 
   content.position.set(nrrdBias.x, nrrdBias.y, nrrdBias.z);
-  const tumourMesh = content.children[0] as THREE.Mesh;
-  const tumourMaterial =
-    tumourMesh.material as THREE.MeshStandardMaterial;
-  // tumourMaterial.color = new THREE.Color("green");
+  // const tumourMesh = content.children[0] as THREE.Mesh;
+  // const tumourMaterial =
+  //   tumourMesh.material as THREE.MeshStandardMaterial;
+  // // tumourMaterial.color = new THREE.Color("green");
 
-  tumourMesh.renderOrder = 1;
-  loadNrrdMeshes.z.renderOrder = 2;
+  // tumourMesh.renderOrder = 1;
+  // loadNrrdMeshes.z.renderOrder = 2;
 
   const box = new THREE.Box3().setFromObject(content);
   const size = box.getSize(new THREE.Vector3()).length();
 
   tumourPosition = box.getCenter(new THREE.Vector3());
   // reset nrrd slice
-  
-  loadNrrdSlices.x.index += tumourPosition.x;
-  loadNrrdSlices.y.index += tumourPosition.y;
-  loadNrrdSlices.z.index += tumourPosition.z;
+
+  loadNrrdSlices.x.index = loadNrrdSlices.x.RSAMaxIndex / 2 + tumourPosition.x;
+  loadNrrdSlices.y.index = loadNrrdSlices.y.RSAMaxIndex / 2 + tumourPosition.y;
+  loadNrrdSlices.z.index = loadNrrdSlices.z.RSAMaxIndex / 2 + tumourPosition.z;
   loadNrrdSlices.x.repaint.call(loadNrrdSlices.x);
   loadNrrdSlices.y.repaint.call(loadNrrdSlices.y);
   loadNrrdSlices.z.repaint.call(loadNrrdSlices.z);

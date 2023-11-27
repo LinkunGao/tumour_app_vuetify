@@ -170,15 +170,21 @@ export async function useMaskObjMesh(name: string) {
     http
       .getBlob("/mesh", { name })
       .then((res) => {
-        const maskMeshObjUrl = URL.createObjectURL(
-          new Blob([(res as any).data as BlobPart])
-        );
-        resolve(
-          Object.assign({
-            maskMeshObjUrl,
-            meshVolume: (res as any).x_header_obj.volume,
-          })
-        );
+        
+        if(res === 404){
+          resolve(false);
+        }else{
+          const maskMeshObjUrl = URL.createObjectURL(
+            new Blob([(res as any).data as BlobPart])
+          );
+          
+          resolve(
+            Object.assign({
+              maskMeshObjUrl,
+              meshVolume: (res as any).x_header_obj.volume,
+            })
+          );
+        }
       })
       .catch((error) => {
         reject(error);

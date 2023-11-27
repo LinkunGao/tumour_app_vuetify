@@ -52,6 +52,9 @@ const http: IHttp = {
           }
         })
         .catch((err) => {
+          if(err.response.status === 404){
+            resolve(err.response.status)
+          }
           reject(err);
         });
     });
