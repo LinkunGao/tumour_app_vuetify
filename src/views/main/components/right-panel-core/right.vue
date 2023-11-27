@@ -145,12 +145,12 @@ let tumourPosition:THREE.Vector3|undefined = undefined
 const skinPosition:THREE.Vector3 = new THREE.Vector3(0,0,0)
 const ribPosition:THREE.Vector3 = new THREE.Vector3(0,0,0)
 
-const commGeo = new THREE.SphereGeometry(5, 32, 16)
+const commGeo = new THREE.SphereGeometry(3, 32, 16)
 
 const material = new THREE.MeshBasicMaterial({ color: "hotpink" });
 const nippleSphereL = new THREE.Mesh(commGeo, material);
 const nippleSphereR = new THREE.Mesh(commGeo, material);
-const skinSphere = new THREE.Mesh(commGeo, new THREE.MeshBasicMaterial({ color: "#FFFF00" }));
+const skinSphere = new THREE.Mesh(commGeo, new THREE.MeshBasicMaterial({ color: "#FFFF00"}));
 const ribSphere = new THREE.Mesh(commGeo, new THREE.MeshBasicMaterial({ color: "#00E5FF" }));
 
 const { maskNrrd } = storeToRefs(useMaskNrrdStore());
@@ -194,6 +194,7 @@ onMounted(() => {
     alpha: true,
     logarithmicDepthBuffer: true,
   });
+  appRenderer.renderer.sortObjects = false;
   panelOperator = new PanelOperationManager(right_panel.value as HTMLDivElement);
 
   loadBar1 = Copper.loading(loadingGif);
@@ -598,6 +599,7 @@ function loadNrrd(nrrdUrl: string, name:"register"|"origin") {
     copperScene.addObject(nrrdMesh.x);
     copperScene.addObject(nrrdMesh.y);
     copperScene.addObject(nrrdMesh.z);
+
     allRightPanelMeshes.push(nrrdMesh.x, nrrdMesh.y, nrrdMesh.z);
 
     
@@ -665,14 +667,16 @@ async function loadBreastModel() {
       breast3DModel = content
       allRightPanelMeshes.push(content);
       content.position.set(nrrdBias.x, nrrdBias.y, nrrdBias.z);
-      
+      content.renderOrder = 0;
       content.traverse((child) => {
           if ((child as THREE.Mesh).isMesh) {
-            (child as THREE.Mesh).material = new THREE.MeshPhongMaterial({
+            (child as THREE.Mesh).renderOrder=0;
+            (child as THREE.Mesh).material = new THREE.MeshBasicMaterial({
               side: THREE.DoubleSide,
               // wireframe:true,
+              // depthWrite:false,
               transparent:true,
-              opacity:0.8,
+              opacity:0.2,
               color: "#795548",
             });
           }
@@ -694,14 +698,15 @@ function loadSegmentTumour(tomourUrl:string){
 
   segementTumour3DModel = content;
 
-  content.position.set(nrrdBias.x, nrrdBias.y, nrrdBias.z);
-  // const tumourMesh = content.children[0] as THREE.Mesh;
-  // const tumourMaterial =
-  //   tumourMesh.material as THREE.MeshStandardMaterial;
-  // // tumourMaterial.color = new THREE.Color("green");
 
-  // tumourMesh.renderOrder = 1;
-  // loadNrrdMeshes.z.renderOrder = 2;
+  content.position.set(nrrdBias.x, nrrdBias.y, nrrdBias.z);
+  const tumourMesh = content.children[0] as THREE.Mesh;
+  const tumourMaterial =
+    tumourMesh.material as THREE.MeshStandardMaterial;
+  // tumourMaterial.color = new THREE.Color("green");
+
+  tumourMesh.renderOrder = 0;
+  loadNrrdMeshes.z.renderOrder = 2;
 
   const box = new THREE.Box3().setFromObject(content);
   const size = box.getSize(new THREE.Vector3()).length();
@@ -715,6 +720,7 @@ function loadSegmentTumour(tomourUrl:string){
   loadNrrdSlices.x.repaint.call(loadNrrdSlices.x);
   loadNrrdSlices.y.repaint.call(loadNrrdSlices.y);
   loadNrrdSlices.z.repaint.call(loadNrrdSlices.z);
+
   displayAndCalculateNSR();
   
   (tumourSliceIndex as ISliceIndex).x = loadNrrdSlices.x.index;
