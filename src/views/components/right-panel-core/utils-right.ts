@@ -1,6 +1,6 @@
 import * as Copper from "copper3d";
 import * as THREE from "three";
-import { getClosestNipple } from "@/views/main/components/tools";
+import { getClosestNipple } from "@/views/components/tools";
 import { IRequests, IDetails } from "@/models/apiTypes";
 export class PanelOperationManager {
   operator: HTMLElement;

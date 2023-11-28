@@ -33,12 +33,12 @@
 <script setup lang="ts">
 import { GUI } from "dat.gui";
 import * as THREE from "three";
-// import * as Copper from "copper3d";
+import * as Copper from "copper3d";
 import "copper3d/dist/css/style.css";
 import createKDTree from "copper3d-tree";
 // import skinPoints from "@/assets/data/skin_mesh_surface_points"
 // import ribPoints from "@/assets/data/outer_rib_mesh_surface_points"
-import * as Copper from "@/ts/index";
+// import * as Copper from "@/ts/index";
 import {
   onMounted,
   ref,
@@ -71,7 +71,7 @@ import {
   transformMeshPointToImageSpace,
   getClosestNipple,
   createOriginSphere
-} from "@/views/main/components/tools";
+} from "@/views/components/tools";
 import { PanelOperationManager, valideClock, deepClone, processPointsCloud } from "./utils-right";
 import loadingGif from "@/assets/loading.svg";
 

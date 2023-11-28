@@ -69,7 +69,7 @@ import {
   revokeRegisterNrrdImages,
   getEraserUrlsForOffLine,
   getCursorUrlsForOffLine,
-} from "@/views/main/components/tools";
+} from "@/views/components/tools";
 import emitter from "@/plugins/bus";
 import { convertInitMaskData } from "@/plugins/worker";
 
