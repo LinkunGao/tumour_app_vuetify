@@ -9,10 +9,11 @@ import {
   useMask,
   useMaskNrrd,
   useMaskObjMesh,
+  useBreastObjMesh,
   useClearMaskMesh,
   useNrrdRegisterCase,
   useNrrdOriginCase,
-  useNipplePointsJson,
+  useBreastPointsJson,
   useNrrdCaseFiles,
   useSaveSphere,
 } from "@/plugins/api";
@@ -27,6 +28,7 @@ import {
   IMaskMesh,
   IRegRquest,
   INipplePoints,
+  IRibSkinPoints,
   IRequests,
 } from "@/models/apiTypes";
 export const useFileCountStore = defineStore("filesCount", () => {
@@ -132,10 +134,11 @@ export const useMaskStore = defineStore("getMasks", () => {
     getMaskDataBackend,
   };
 });
+
 export const useNipplePointsStore = defineStore("getNipplePoints", () => {
   const nipplePoints = ref<INipplePoints | Boolean>();
   const getNipplePoints = async (name: string) => {
-    nipplePoints.value = (await useNipplePointsJson(name)) as
+    nipplePoints.value = (await useBreastPointsJson(name, "nipple_points")) as
       | INipplePoints
       | boolean;
   };
@@ -144,6 +147,33 @@ export const useNipplePointsStore = defineStore("getNipplePoints", () => {
     getNipplePoints,
   };
 });
+
+export const useSkinPointsStore = defineStore("getSkinPoints", () => {
+  const skinPoints = ref<IRibSkinPoints | Boolean>();
+  const getSkinPoints = async (name: string) => {
+    skinPoints.value = (await useBreastPointsJson(name, "skin_mesh_surface_points")) as
+      | IRibSkinPoints
+      | boolean;
+  };
+  return {
+    skinPoints,
+    getSkinPoints,
+  };
+});
+
+export const useRibPointsStore = defineStore("getRibPoints", () => {
+  const ribPoints = ref<IRibSkinPoints | Boolean>();
+  const getRibPoints = async (name: string) => {
+    ribPoints.value = (await useBreastPointsJson(name, "outer_rib_mesh_surface_points")) as
+      | IRibSkinPoints
+      | boolean;
+  };
+  return {
+    ribPoints,
+    getRibPoints,
+  };
+});
+
 export const useMaskNrrdStore = defineStore("getMaskNrrd", () => {
   const maskNrrd = ref<string>();
   const getMaskNrrd = async (name: string) => {
@@ -154,6 +184,7 @@ export const useMaskNrrdStore = defineStore("getMaskNrrd", () => {
     getMaskNrrd,
   };
 });
+
 export const useMaskMeshObjStore = defineStore("getMaskMesh", () => {
   const maskMeshObj = ref<IMaskMesh>({});
   const getMaskMeshObj = async (name: string) => {
@@ -164,6 +195,18 @@ export const useMaskMeshObjStore = defineStore("getMaskMesh", () => {
     getMaskMeshObj,
   };
 });
+
+export const useBreastMeshObjStore = defineStore("getBreastMesh", () => {
+  const breastMeshObj = ref<string>();
+  const getBreastMeshObj = async (name: string) => {
+    breastMeshObj.value = (await useBreastObjMesh(name)) as string;
+  };
+  return {
+    breastMeshObj,
+    getBreastMeshObj,
+  };
+});
+
 export const useClearMaskMeshStore = defineStore("clearMaskMesh", () => {
   const clearMeshResult = ref<string>();
   const clearMaskMeshObj = async (name: string) => {

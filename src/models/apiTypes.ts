@@ -11,7 +11,8 @@ export interface IDetails {
   file_paths: {
     origin_nrrd_paths: string[];
     registration_nrrd_paths: string[];
-    segmentation_nipple_paths: string[];
+    segmentation_breast_points_paths: string[];
+    segmentation_breast_model_paths: string[];
     segmentation_manual_mask_paths: string[];
     segmentation_manual_3dobj_paths: string[];
   };
@@ -103,6 +104,11 @@ export interface INipplePoints {
   };
   elements: {};
 }
+
+export interface IRibSkinPoints {
+  Datapoints: number[][];
+}
+
 export interface IRequests {
   url: string;
   params: any;

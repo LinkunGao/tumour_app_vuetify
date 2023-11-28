@@ -1,6 +1,7 @@
 import * as Copper from "copper3d";
 import * as THREE from "three";
-import { getClosestNipple } from "@/views/main/components/tools";
+import { getClosestNipple } from "@/views/components/tools";
+import { IRequests, IDetails } from "@/models/apiTypes";
 export class PanelOperationManager {
   operator: HTMLElement;
   private operatorId: string;
@@ -211,3 +212,41 @@ export function deepClone(obj: any, clonedObjects = new WeakMap()) {
 
   return newObj;
 }
+
+
+export function processPointsCloud(points:number[][], bias: THREE.Vector3){
+  const processedPoints:number[][] = []
+  points.forEach((point)=>{
+    processedPoints.push([point[0]+bias.x, point[1]+bias.y, point[2]+bias.z])
+  })
+  
+   return processedPoints;
+
+}
+
+export const findBreastRequestUrls = (
+  details: Array<IDetails>,
+  caseId: string,
+  type: "registration" | "origin"
+) => {
+  const currentCaseDetails = details.filter((item) => item.name === caseId)[0];
+  const requests: Array<IRequests> = [];
+  
+  currentCaseDetails.file_paths.segmentation_breast_points_paths.forEach(
+    (filepath) => {
+      requests.push({
+        url: "/single-file",
+        params: { path: filepath },
+      });
+    }
+  );
+  currentCaseDetails.file_paths.segmentation_breast_model_paths.forEach(
+    (filepath) => {
+      requests.push({
+        url: "/single-file",
+        params: { path: filepath },
+      });
+    }
+  );
+  return requests;
+};

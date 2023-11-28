@@ -8,6 +8,7 @@
       ></v-list-item>
       <ImageCtl />
       <OperationCtl />
+      <RightPanelCore />
       <SysOpts />
     </v-list>
   </v-card>
@@ -17,6 +18,7 @@
 import { ref } from "vue";
 import ImageCtl from "./tools/NrrdImageCtl.vue";
 import OperationCtl from "./tools/OperationCtl.vue";
+import RightPanelCore from "./RightPanelCore.vue";
 import SysOpts from "./SysOpts.vue";
 const open = ref(["Cases"]);
 </script>

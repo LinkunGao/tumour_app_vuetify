@@ -60,6 +60,12 @@ export default defineConfig({
       external: [...filesPathToExclude]
     }
   },
+  optimizeDeps: {
+    exclude: [
+      '@vuetify/loader-shared/runtime',
+      'vuetify',
+    ],
+  },
   server: {
     host: "0.0.0.0",
     port: 3000,

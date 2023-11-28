@@ -140,10 +140,10 @@ export async function useMask(name: string) {
       });
   });
 }
-export async function useNipplePointsJson(name: string) {
+export async function useBreastPointsJson(name: string, filename:string) {
   return new Promise((resolve, reject) => {
     http
-      .get("/nipple_points", { name })
+      .get("/breast_points", { name, filename })
       .then((data) => {
         resolve(data);
       })
@@ -170,21 +170,44 @@ export async function useMaskObjMesh(name: string) {
     http
       .getBlob("/mesh", { name })
       .then((res) => {
-        const maskMeshObjUrl = URL.createObjectURL(
-          new Blob([(res as any).data as BlobPart])
-        );
-        resolve(
-          Object.assign({
-            maskMeshObjUrl,
-            meshVolume: (res as any).x_header_obj.volume,
-          })
-        );
+        
+        if(res === 404){
+          resolve(false);
+        }else{
+          const maskMeshObjUrl = URL.createObjectURL(
+            new Blob([(res as any).data as BlobPart])
+          );
+          
+          resolve(
+            Object.assign({
+              maskMeshObjUrl,
+              meshVolume: (res as any).x_header_obj.volume,
+            })
+          );
+        }
       })
       .catch((error) => {
         reject(error);
       });
   });
 }
+
+export async function useBreastObjMesh(name: string) {
+  return new Promise<string>((resolve, reject) => {
+    http
+      .getBlob("/breast_model", { name })
+      .then((res) => {
+        const breastMeshObjUrl = URL.createObjectURL(
+          new Blob([res as BlobPart])
+        );
+        resolve(breastMeshObjUrl);
+      })
+      .catch((error) => {
+        reject(error);
+      });
+  });
+}
+
 export async function useClearMaskMesh(name: string) {
   let res = http.get<string>("/clearmesh", { name });
   return res;
