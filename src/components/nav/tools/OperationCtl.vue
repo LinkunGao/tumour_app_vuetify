@@ -146,8 +146,9 @@ const commFuncRadioValues = ref([
 
 const commSliderRadioValues = ref([
   { label: "Opacity", value: "globalAlpha", color: "success" },
-  { label: "B&E size", value: "brushAndEraserSize", color: "info" },
-  { label: "ImageContrast", value: "windowHigh", color: "warning" },
+  { label: "B&E Size", value: "brushAndEraserSize", color: "info" },
+  { label: "WindowHigh", value: "windowHigh", color: "warning" },
+  { label: "WindowLow", value: "windowLow", color: "error" },
 ]);
 
 const commFuncBtnValues = ref([
@@ -229,30 +230,37 @@ function toggleSliderRadios(val: any) {
 }
 
 function toggleSlider(val: number) {
-  if (commSliderRadios.value !== "windowHigh") {
+  if (commSliderRadios.value !== "windowHigh" && commSliderRadios.value !== "windowLow") {
     guiSettings.value.guiState[commSliderRadios.value] = val;
   }
   if (commSliderRadios.value === "brushAndEraserSize") {
     guiSettings.value.guiSetting[commSliderRadios.value].onChange();
   }
-  if (commSliderRadios.value === "windowHigh") {
+  if (commSliderRadios.value === "windowHigh" || commSliderRadios.value === "windowLow") {
     guiSettings.value.guiSetting[commSliderRadios.value].onChange(val);
   }
 }
 
 function toggleSliderFinished(val: number) {
-  if (commSliderRadios.value === "windowHigh") {
+  if (commSliderRadios.value === "windowHigh" || commSliderRadios.value === "windowLow") {
     guiSettings.value.guiSetting[commSliderRadios.value].onFinished();
   }
 }
 
 function updateSliderSettings() {
-  if (commSliderRadios.value !== "windowHigh") {
-    slider.value = guiSettings.value.guiState[commSliderRadios.value];
-  } else {
-    slider.value =
-      guiSettings.value.guiSetting[commSliderRadios.value].value.windowHigh;
-  }
+  // if (commSliderRadios.value !== "windowHigh" && commSliderRadios.value !== "windowLow") {
+    
+  // } else {
+    if (commSliderRadios.value === "windowHigh"){
+      slider.value = guiSettings.value.guiSetting[commSliderRadios.value].value.windowHigh;
+    }else if (commSliderRadios.value === "windowLow"){
+      slider.value =
+      guiSettings.value.guiSetting[commSliderRadios.value].value.windowLow;
+    }else{
+      slider.value = guiSettings.value.guiState[commSliderRadios.value];
+    }
+    
+  // }
   sliderMax.value = guiSettings.value.guiSetting[commSliderRadios.value].max;
   sliderMin.value = guiSettings.value.guiSetting[commSliderRadios.value].min;
   sliderStep.value = guiSettings.value.guiSetting[commSliderRadios.value].step;
