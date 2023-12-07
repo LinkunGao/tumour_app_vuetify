@@ -148,7 +148,7 @@ const commSliderRadioValues = ref([
   { label: "Opacity", value: "globalAlpha", color: "success" },
   { label: "B&E Size", value: "brushAndEraserSize", color: "info" },
   { label: "WindowHigh", value: "windowHigh", color: "warning" },
-  { label: "WindowLow", value: "windowLow", color: "error" },
+  { label: "WindowCenter", value: "windowLow", color: "error" },
 ]);
 
 const commFuncBtnValues = ref([
