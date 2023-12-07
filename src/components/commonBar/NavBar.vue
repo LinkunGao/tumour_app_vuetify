@@ -28,9 +28,9 @@
             <i>sync</i>
           </div>
         </span>
-        <span @click="openDialog">
+        <!-- <span @click="openDialog">
           <ion-icon name="cloud-upload-outline"></ion-icon>
-        </span>
+        </span> -->
       </div>
     </div>
   </div>
@@ -39,7 +39,7 @@
 <script setup lang="ts">
 import { ref, reactive, toRefs, watchEffect, onMounted } from "vue";
 import emitter from "@/plugins/bus";
-import {throttle2} from "@/views/main/components/tools";
+// import {throttle2} from "@/views/components/tools";
 
 type Props = {
   fileNum: number;

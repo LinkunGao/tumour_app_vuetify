@@ -139,7 +139,10 @@ function togglePanelActive(panel: string, e: MouseEvent) {
         effectPanelSize: leftPanelWidth,
         panel: "left",
       });
-
+      emitter.emit("resize-left-right-panels", {
+        effectPanelSize: rightPanelWidth,
+        panel: "right",
+      });
       break;
     case "right":
       rightFullScreen.value = !rightFullScreen.value;

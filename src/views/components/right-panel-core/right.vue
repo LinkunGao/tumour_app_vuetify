@@ -152,6 +152,8 @@ const nippleSphereL = new THREE.Mesh(commGeo, material);
 const nippleSphereR = new THREE.Mesh(commGeo, material);
 const skinSphere = new THREE.Mesh(commGeo, new THREE.MeshBasicMaterial({ color: "#FFFF00"}));
 const ribSphere = new THREE.Mesh(commGeo, new THREE.MeshBasicMaterial({ color: "#00E5FF" }));
+skinSphere.renderOrder=0;
+ribSphere.renderOrder=0;
 
 const { maskNrrd } = storeToRefs(useMaskNrrdStore());
 const { getMaskNrrd } = useMaskNrrdStore();
@@ -194,7 +196,7 @@ onMounted(() => {
     alpha: true,
     logarithmicDepthBuffer: true,
   });
-  appRenderer.renderer.sortObjects = false;
+  // appRenderer.renderer.sortObjects = false;
   panelOperator = new PanelOperationManager(right_panel.value as HTMLDivElement);
 
   loadBar1 = Copper.loading(loadingGif);
@@ -430,8 +432,17 @@ function onEmitter() {
                 registrationMeshes.z,
               ]
             );
+
           loadNrrdMeshes = originMeshes as Copper.nrrdMeshesType;
           loadNrrdSlices = originSlices as Copper.nrrdSliceType;
+
+
+          // loadNrrdSlices.x.volume.lowerThreshold = 40;
+          // loadNrrdSlices.y.volume.lowerThreshold = 40;
+          // loadNrrdSlices.z.volume.lowerThreshold = 40;
+          // loadNrrdSlices.x.repaint.call(loadNrrdSlices.x);
+          // loadNrrdSlices.y.repaint.call(loadNrrdSlices.y);
+          // loadNrrdSlices.z.repaint.call(loadNrrdSlices.z);
           resetSliceIndex(recordSliceIndex);
           copperScene.scene.add(
             ...[loadNrrdMeshes.x, loadNrrdMeshes.y, loadNrrdMeshes.z]
@@ -589,6 +600,8 @@ function loadNrrd(nrrdUrl: string, name:"register"|"origin") {
     loadNrrdSlices.x.index = loadNrrdSlices.x.RSAMaxIndex / 2;
     loadNrrdSlices.y.index = loadNrrdSlices.y.RSAMaxIndex / 2;
     loadNrrdSlices.z.index = loadNrrdSlices.z.RSAMaxIndex / 2;
+
+
     loadNrrdSlices.x.repaint.call(loadNrrdSlices.x);
     loadNrrdSlices.y.repaint.call(loadNrrdSlices.y);
     loadNrrdSlices.z.repaint.call(loadNrrdSlices.z);
@@ -667,10 +680,10 @@ async function loadBreastModel() {
       breast3DModel = content
       allRightPanelMeshes.push(content);
       content.position.set(nrrdBias.x, nrrdBias.y, nrrdBias.z);
-      content.renderOrder = 0;
+      content.renderOrder = 3;
       content.traverse((child) => {
           if ((child as THREE.Mesh).isMesh) {
-            (child as THREE.Mesh).renderOrder=0;
+            (child as THREE.Mesh).renderOrder=3;
             (child as THREE.Mesh).material = new THREE.MeshBasicMaterial({
               side: THREE.DoubleSide,
               // wireframe:true,
@@ -705,8 +718,7 @@ function loadSegmentTumour(tomourUrl:string){
     tumourMesh.material as THREE.MeshStandardMaterial;
   // tumourMaterial.color = new THREE.Color("green");
 
-  tumourMesh.renderOrder = 0;
-  loadNrrdMeshes.z.renderOrder = 2;
+  tumourMesh.renderOrder = 3;
 
   const box = new THREE.Box3().setFromObject(content);
   const size = box.getSize(new THREE.Vector3()).length();
@@ -894,6 +906,10 @@ function removeOldMeshes(meshSet: THREE.Object3D<THREE.Event>[]) {
 
 const resetSliceIndex = (sliceIndex: ISliceIndex) => {
   if(sliceIndex.x === 0 && sliceIndex.y === 0 && sliceIndex.z ===0 ) return;
+
+  loadNrrdMeshes.x.renderOrder = 1;
+  loadNrrdMeshes.y.renderOrder = 1;
+  loadNrrdMeshes.z.renderOrder = 1;
   loadNrrdSlices.x.index = sliceIndex.x;
   loadNrrdSlices.y.index = sliceIndex.y;
   loadNrrdSlices.z.index = sliceIndex.z;
