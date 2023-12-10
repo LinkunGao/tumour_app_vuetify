@@ -188,8 +188,6 @@ onMounted(() => {
 function manageEmitters() {
   emitter.on("finishloadcases", (val) => {
     guiSettings.value = val;
-    console.log(guiSettings.value.guiSetting);
-    
     commSliderRadios.value = "globalAlpha";
     updateSliderSettings();
     commFuncRadiosDisabled.value = false;
