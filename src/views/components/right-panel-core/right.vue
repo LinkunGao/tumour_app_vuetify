@@ -18,7 +18,7 @@
       </div>
     </v-card>
     <div></div>
-    <div ref="right_panel_gui" id="gui"></div>
+    <div ref="right_panel_gui" class="right_gui"></div>
   </div>
   <div v-show="panelWidth >= 410 ? true : false" class="nav_bar_right_container" ref="nav_bar_right_container">
 
@@ -33,12 +33,10 @@
 <script setup lang="ts">
 import { GUI } from "dat.gui";
 import * as THREE from "three";
-import * as Copper from "copper3d";
-import "copper3d/dist/css/style.css";
+// import * as Copper from "copper3d";
+// import "copper3d/dist/css/style.css";
 import createKDTree from "copper3d-tree";
-// import skinPoints from "@/assets/data/skin_mesh_surface_points"
-// import ribPoints from "@/assets/data/outer_rib_mesh_surface_points"
-// import * as Copper from "@/ts/index";
+import * as Copper from "@/ts/index";
 import {
   onMounted,
   ref,
@@ -196,6 +194,8 @@ onMounted(() => {
     alpha: true,
     logarithmicDepthBuffer: true,
   });
+
+  appRenderer.renderer.domElement.style.position = "fixed"
   // appRenderer.renderer.sortObjects = false;
   panelOperator = new PanelOperationManager(right_panel.value as HTMLDivElement);
 
@@ -436,13 +436,6 @@ function onEmitter() {
           loadNrrdMeshes = originMeshes as Copper.nrrdMeshesType;
           loadNrrdSlices = originSlices as Copper.nrrdSliceType;
 
-
-          // loadNrrdSlices.x.volume.lowerThreshold = 40;
-          // loadNrrdSlices.y.volume.lowerThreshold = 40;
-          // loadNrrdSlices.z.volume.lowerThreshold = 40;
-          // loadNrrdSlices.x.repaint.call(loadNrrdSlices.x);
-          // loadNrrdSlices.y.repaint.call(loadNrrdSlices.y);
-          // loadNrrdSlices.z.repaint.call(loadNrrdSlices.z);
           resetSliceIndex(recordSliceIndex);
           copperScene.scene.add(
             ...[loadNrrdMeshes.x, loadNrrdMeshes.y, loadNrrdMeshes.z]
@@ -949,7 +942,8 @@ const resetNrrdImage = () => {
   /* overflow: hidden;
   position: relative; */
 }
-#gui {
+
+.right_gui {
   position: absolute;
   top: 0;
   right: 0;
