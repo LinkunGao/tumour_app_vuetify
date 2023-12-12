@@ -1,6 +1,6 @@
 <template>
   <div id="bg" ref="base_container" class="dark">
-    <div v-show="debug_mode" ref="c_gui" id="gui"></div>
+    <div v-show="debug_mode" ref="c_gui" class="left_gui"></div>
     <div ref="canvas_container" class="canvas_container"></div>
     <div ref="slice_index_container" class="copper3d_sliceNumber">
       Tumour Segmentation Panel
@@ -34,7 +34,7 @@
 <script setup lang="ts">
 import { GUI, GUIController } from "dat.gui";
 // import * as Copper from "copper3d";
-import "copper3d/dist/css/style.css";
+// import "copper3d/dist/css/style.css";
 import * as Copper from "@/ts/index";
 import loadingGif from "@/assets/loading.svg";
 
@@ -424,6 +424,15 @@ const getMaskData = async (
   }
 };
 
+const getContrastMove = (step:number, towards:"horizental"|"vertical") =>{
+  if(towards === "horizental"){
+    emitter.emit("dragImageWindowCenter", step)
+  }else if(towards === "vertical"){
+    emitter.emit("dragImageWindowHigh", step)
+  }
+  
+}
+
 watchEffect(() => {
   if (
     filesCount.value != 0 &&
@@ -472,6 +481,7 @@ watchEffect(() => {
         });
         nrrdTools.draw({ getMaskData, getSphereData });
         nrrdTools.setupGUI(gui);
+        nrrdTools.enableContrastDragEvents(getContrastMove)
         scene?.addPreRenderCallbackFunction(nrrdTools.start);
         setUpGuiAfterLoading();
       } else {
@@ -794,7 +804,7 @@ function switchRegCheckBoxStatus(
   position: relative;
   /* border: 1px solid palevioletred; */
 }
-#gui {
+.left_gui {
   /* position: fixed; */
   position: absolute;
   top: 0;

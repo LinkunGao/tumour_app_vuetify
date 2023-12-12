@@ -135,6 +135,8 @@ const btnResetZoomDisabled = ref(true);
 const btnClearDisabled = ref(true);
 const btnClearAllDisabled = ref(true);
 
+const contrastDragSensitivity = ref(25);
+
 const guiSettings = ref<any>();
 
 const commFuncRadioValues = ref([
@@ -149,6 +151,7 @@ const commSliderRadioValues = ref([
   { label: "B&E Size", value: "brushAndEraserSize", color: "info" },
   { label: "WindowHigh", value: "windowHigh", color: "warning" },
   { label: "WindowCenter", value: "windowLow", color: "error" },
+  { label: "WindowSensitivity", value: "sensitivity", color: "pink-darken-1" },
 ]);
 
 const commFuncBtnValues = ref([
@@ -185,6 +188,8 @@ onMounted(() => {
 function manageEmitters() {
   emitter.on("finishloadcases", (val) => {
     guiSettings.value = val;
+    console.log(guiSettings.value.guiSetting);
+    
     commSliderRadios.value = "globalAlpha";
     updateSliderSettings();
     commFuncRadiosDisabled.value = false;
@@ -196,6 +201,29 @@ function manageEmitters() {
     btnClearDisabled.value = false;
     btnClearAllDisabled.value = false;
   });
+
+  emitter.on("dragImageWindowCenter", (step)=>{
+    dragToChangeImageWindow("windowLow", step as number);
+  })
+  emitter.on("dragImageWindowHigh", (step)=>{
+    dragToChangeImageWindow("windowHigh", step as number);
+  })
+}
+
+function dragToChangeImageWindow(type:"windowHigh"|"windowLow", step:number){
+  let val = 0;
+  if (type==="windowHigh"){
+    val = guiSettings.value.guiSetting[type].value.windowHigh + step * contrastDragSensitivity.value;
+  }else{
+    val = guiSettings.value.guiSetting[type].value.windowLow + step * contrastDragSensitivity.value;
+  }
+  
+  if(val >=guiSettings.value.guiSetting[type].max || val<=0){
+    return
+  }
+
+  guiSettings.value.guiSetting[type].onChange(val);
+ 
 }
 
 function toggleFuncRadios(val: any) {
@@ -230,6 +258,12 @@ function toggleSliderRadios(val: any) {
 }
 
 function toggleSlider(val: number) {
+
+  if(commSliderRadios.value === "sensitivity"){
+    contrastDragSensitivity.value = val;
+    return;
+  }
+
   if (commSliderRadios.value !== "windowHigh" && commSliderRadios.value !== "windowLow") {
     guiSettings.value.guiState[commSliderRadios.value] = val;
   }
@@ -248,22 +282,6 @@ function toggleSliderFinished(val: number) {
 }
 
 function updateSliderSettings() {
-  // if (commSliderRadios.value !== "windowHigh" && commSliderRadios.value !== "windowLow") {
-    
-  // } else {
-    if (commSliderRadios.value === "windowHigh"){
-      slider.value = guiSettings.value.guiSetting[commSliderRadios.value].value.windowHigh;
-    }else if (commSliderRadios.value === "windowLow"){
-      slider.value =
-      guiSettings.value.guiSetting[commSliderRadios.value].value.windowLow;
-    }else{
-      slider.value = guiSettings.value.guiState[commSliderRadios.value];
-    }
-    
-  // }
-  sliderMax.value = guiSettings.value.guiSetting[commSliderRadios.value].max;
-  sliderMin.value = guiSettings.value.guiSetting[commSliderRadios.value].min;
-  sliderStep.value = guiSettings.value.guiSetting[commSliderRadios.value].step;
 
   const radioSettings = commSliderRadioValues.value.filter(
     (item) => item.value === commSliderRadios.value
@@ -272,6 +290,29 @@ function updateSliderSettings() {
   if (radioSettings.length > 0) {
     sliderColor.value = radioSettings[0].color;
   }
+
+  if(commSliderRadios.value === "sensitivity"){
+    sliderMax.value = 50;
+    sliderMin.value = 1;
+    sliderStep.value = 1;
+    slider.value = contrastDragSensitivity.value;
+    return;
+  }
+
+  if (commSliderRadios.value === "windowHigh"){
+    slider.value = guiSettings.value.guiSetting[commSliderRadios.value].value.windowHigh;
+  }else if (commSliderRadios.value === "windowLow"){
+    slider.value =
+    guiSettings.value.guiSetting[commSliderRadios.value].value.windowLow;
+  }else{
+    slider.value = guiSettings.value.guiState[commSliderRadios.value];
+  }
+    
+  sliderMax.value = guiSettings.value.guiSetting[commSliderRadios.value].max;
+  sliderMin.value = guiSettings.value.guiSetting[commSliderRadios.value].min;
+  sliderStep.value = guiSettings.value.guiSetting[commSliderRadios.value].step;
+
+  
 }
 
 function onBtnClick(val: any) {
