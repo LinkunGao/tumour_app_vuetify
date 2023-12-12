@@ -231,7 +231,7 @@ function initSocket(){
         const volumeJson = JSON.parse(event.data);
         tumourVolume.value = Math.ceil(volumeJson.volume) / 1000;
       }
-      clearInterval(socketTimer as NodeJS.Timer);
+      clearInterval(socketTimer as NodeJS.Timeout);
     } else {
       if(!!maskMeshObj.value.maskMeshObjUrl){
         console.log("remove old mesh");
