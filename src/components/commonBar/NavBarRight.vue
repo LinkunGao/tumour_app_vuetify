@@ -1,9 +1,26 @@
 <template>
   <div class="nav dark" ref="nav_container">
-    <div class="content" id="left_nav_bar">
+    <div class="content" id="right_nav_bar">
+
+      <div v-show="showDragSlider && panelWidth >= 600 ? true : false" :class="panelWidth >1000 ? 'mx-6 px-6 slider-lg':'slider-sm'">
+        <v-slider
+        
+        class="mt-5"
+        v-model="slider"
+        :color="sliderColor"
+        thumb-label
+        :disabled="sliderDisabled"
+        :max="sliderMax"
+        :min="sliderMin"
+        :step="sliderStep"
+        @update:modelValue="toggleSlider"
+      ></v-slider>
+      </div>
+        
       <div class="arrows">
         <span
           v-for="item in viewData"
+          :class="{ 'disabled': isBtnDisabled }"
           @click.stop="onSigleClick(item.label)"
           @dblclick.stop="onDoubleClick(item.label)"
         >
@@ -31,7 +48,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, onMounted, toRefs, reactive } from "vue";
 import sagittalImg_white from "@/assets/images/person_left_view_white.png";
 import axialImg_white from "@/assets/images/person_top_down_white.png";
 import coronalImg_white from "@/assets/images/person_anterior_white.png";
@@ -41,6 +58,23 @@ import coronalImg_blank from "@/assets/images/person_anterior.png";
 import clockImg from "@/assets/images/clock_white.png";
 import resetImg from "@/assets/images/reset.png";
 import emitter from "@/plugins/bus";
+import {PanelOperationManager} from "@/views/components/right-panel-core/utils-right"
+
+type Props = {
+  panelWidth: number;
+};
+interface ISliderView{
+    color:string,
+    max:number,
+    min:number,
+    value:number
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  panelWidth: 1000,
+});
+const { panelWidth } = toRefs(reactive(props));
+const showDragSlider = ref(false)
 
 const viewData = [
   {
@@ -80,16 +114,59 @@ const viewData = [
 
 ];
 
+const slider = ref(0);
+const sliderColor = ref("grey");
+const sliderDisabled = ref(true);
+const sliderMax = ref(100);
+const sliderMin = ref(0);
+const sliderStep = ref(1);
+let operator:PanelOperationManager|null = null;
+
+const sliderViews = {
+  sagittal:{
+    color:"green-darken-2",
+    max:0,
+    min:0,
+    value:0
+  },
+  axial:{
+    color:"deep-orange-darken-2",
+    max:0,
+    min:0,
+    value:0
+  },
+  coronal:{
+    color:"cyan-darken-2",
+    max:0,
+    min:0,
+    value:0
+  },
+  default:{
+    color:"grey",
+    max:0,
+    min:0,
+    value:0
+  }
+}
+
+let sliderSettings:ISliderView = sliderViews.default;
+
 const darkMode = ref(true);
+const isBtnDisabled = ref(true);
 const nav_container = ref<HTMLDivElement>();
 const emit = defineEmits(["onViewSingleClick", "onViewDoubleClick"]);
 
 const onSigleClick = (view: string) => {
-  emit("onViewSingleClick", view);
+  if (!isBtnDisabled.value) {
+      mountSlider(view)
+      emit("onViewSingleClick", view);
+    }
 };
 
 const onDoubleClick = (view: string) => {
-  emit("onViewDoubleClick", view);
+  if (!isBtnDisabled.value) {
+    emit("onViewDoubleClick", view);
+  }
 };
 
 onMounted(() => {
@@ -97,7 +174,64 @@ onMounted(() => {
     darkMode.value = !darkMode.value;
     nav_container.value?.classList.toggle("dark");
   });
+  emitter.on("sendMountSliderSettings", (settings:any)=>{
+    isBtnDisabled.value = false;
+    sliderViews.sagittal.max = settings.dimensions[0] - 1;
+    sliderViews.axial.max = settings.dimensions[2] - 1;
+    sliderViews.coronal.max = settings.dimensions[1] - 1;
+    sliderViews.sagittal.value = settings.currentValue[0];
+    sliderViews.axial.value = settings.currentValue[2];
+    sliderViews.coronal.value = settings.currentValue[1];
+    operator = settings.panelOperator as PanelOperationManager;
+  });
+  // switch cases
+  emitter.on("casename",()=>{
+    isBtnDisabled.value = true;
+    mountSlider("reset")
+  })
 });
+
+function mountSlider(view:string){
+  
+  switch (view) {
+    case "sagittal":
+      sliderSettings = sliderViews.sagittal;
+      break;
+    case "axial":
+      sliderSettings = sliderViews.axial;
+      break;
+    case "coronal":
+      sliderSettings = sliderViews.coronal;
+      break;
+    default:
+      sliderSettings = sliderViews.default;
+      break;
+  }
+
+  slider.value = sliderSettings.value;
+  sliderColor.value = sliderSettings.color;
+  sliderMax.value = sliderSettings.max;
+  sliderMin.value = sliderSettings.min;
+
+  if(view === "reset" || view === "3dview"){
+    sliderDisabled.value = true;
+    showDragSlider.value = false;
+  }else{
+    sliderDisabled.value = false;
+    showDragSlider.value = true;
+  }
+}
+
+function toggleSlider(val: number) {
+  if(operator!==null){
+
+    setTimeout(()=>{
+     !!operator && operator.updateSliceIndex(val - sliderSettings.value)
+    sliderSettings.value = val;
+    },10)
+   
+  }
+}
 </script>
 
 <style scoped>
@@ -185,6 +319,18 @@ onMounted(() => {
     inset -5px -5px 10px rgba(255, 255, 255, 0.1);
 }
 
+.disabled {
+  pointer-events: none; 
+  opacity: 0.6; 
+}
+.slider-lg{
+  width: 600px;
+}
+
+.slider-sm{
+  width: 100%;
+}
+
 .image {
   width: 1em;
   height: 1em;
@@ -197,5 +343,6 @@ onMounted(() => {
   font-size: 1em;
   color: #f44336;
 }
+
 
 </style>
