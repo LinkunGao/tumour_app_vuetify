@@ -136,11 +136,11 @@ function togglePanelActive(panel: string, e: MouseEvent) {
       leftPanelWidth.value = left_container.value?.getBoundingClientRect()
         .width as number;
       emitter.emit("resize-left-right-panels", {
-        effectPanelSize: leftPanelWidth,
+        effectPanelSize: leftPanelWidth.value,
         panel: "left",
       });
       emitter.emit("resize-left-right-panels", {
-        effectPanelSize: rightPanelWidth,
+        effectPanelSize: rightPanelWidth.value,
         panel: "right",
       });
       break;
@@ -157,12 +157,17 @@ function togglePanelActive(panel: string, e: MouseEvent) {
           right_container.value?.classList.add("nav_panel_active");
         }
       }
-      rightPanelWidth.value = right_container.value?.getBoundingClientRect()
+      setTimeout(() => {
+        // delay 500ms
+        // set a time out to make sure after the browser finish render the doms, then we get the correct panel width.
+        rightPanelWidth.value = right_container.value?.getBoundingClientRect()
         .width as number;
-      emitter.emit("resize-left-right-panels", {
-        effectPanelSize: rightPanelWidth,
-        panel: "right",
-      });
+        emitter.emit("resize-left-right-panels", {
+          effectPanelSize: rightPanelWidth.value,
+          panel: "right",
+        });
+      }, 300);
+     
       break;
   }
 }

@@ -124,7 +124,7 @@ export class PanelOperationManager {
     };
   }
 
-  private updateSliceIndex(move: number) {
+  updateSliceIndex(move: number) {
     const currentSlice = this.slicePrams.currentViewedSlice as any;
     let newIndex = this.slicePrams.currentSliceIndex + move;
     if (newIndex > this.slicePrams.maxIndex) {

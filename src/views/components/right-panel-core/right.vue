@@ -23,6 +23,7 @@
   <div v-show="panelWidth >= 410 ? true : false" class="nav_bar_right_container" ref="nav_bar_right_container">
 
       <NavBarRight
+        :panel-width="Math.ceil(panelWidth) "
         @on-view-single-click="handleViewSigleClick"
         @on-view-double-click="handleViewsDoubleClick"
       />
@@ -33,10 +34,10 @@
 <script setup lang="ts">
 import { GUI } from "dat.gui";
 import * as THREE from "three";
-// import * as Copper from "copper3d";
-// import "copper3d/dist/css/style.css";
+import * as Copper from "copper3d";
+import "copper3d/dist/css/style.css";
 import createKDTree from "copper3d-tree";
-import * as Copper from "@/ts/index";
+// import * as Copper from "@/ts/index";
 import {
   onMounted,
   ref,
@@ -231,7 +232,7 @@ function initSocket(){
         const volumeJson = JSON.parse(event.data);
         tumourVolume.value = Math.ceil(volumeJson.volume) / 1000;
       }
-      clearInterval(socketTimer as NodeJS.Timer);
+      clearInterval(socketTimer as NodeJS.Timeout);
     } else {
       if(!!maskMeshObj.value.maskMeshObjUrl){
         console.log("remove old mesh");
@@ -283,6 +284,7 @@ function initScene(name: string) {
     controls.rotateSpeed = 3.5;
     controls.panSpeed = 0.5;
 
+    //update camera views
     copperScene.loadViewUrl("/nrrd_view.json");
 
     // Config threejs environment background
@@ -370,19 +372,21 @@ function onEmitter() {
       loadBreastModel()
       // 2.4 Load tumour obj model if has
 
-
-        if(!!maskMeshObj.value.maskMeshObjUrl){
-          URL.revokeObjectURL(maskMeshObj.value.maskMeshObjUrl)
-        }
-        await getMaskMeshObj(casename);
+      if(!!maskMeshObj.value.maskMeshObjUrl){
+        URL.revokeObjectURL(maskMeshObj.value.maskMeshObjUrl)
+      }
+      await getMaskMeshObj(casename);
+      
+      if(!!maskMeshObj.value){
+        tumourVolume.value = Math.ceil(maskMeshObj.value.meshVolume as number) / 1000;
+        // maskMeshObj.value.maskMeshObjUrl as string
         
-        if(!!maskMeshObj.value){
-          tumourVolume.value = Math.ceil(maskMeshObj.value.meshVolume as number) / 1000;
-          // maskMeshObj.value.maskMeshObjUrl as string
-          
-          // 2.4 load tumour model
-          loadSegmentTumour(maskMeshObj.value.maskMeshObjUrl as string)
-        } 
+        // 2.4 load tumour model
+        loadSegmentTumour(maskMeshObj.value.maskMeshObjUrl as string)
+      }else{
+        requestUpdateSliderSettings();
+      }
+   
     });
 
     
@@ -590,10 +594,9 @@ function loadNrrd(nrrdUrl: string, name:"register"|"origin") {
       loadNrrdSlices = originSlices = nrrdSlices;
     }
   
-    loadNrrdSlices.x.index = loadNrrdSlices.x.RSAMaxIndex / 2;
-    loadNrrdSlices.y.index = loadNrrdSlices.y.RSAMaxIndex / 2;
-    loadNrrdSlices.z.index = loadNrrdSlices.z.RSAMaxIndex / 2;
-
+    loadNrrdSlices.x.index = Math.ceil(loadNrrdSlices.x.RSAMaxIndex / 2);
+    loadNrrdSlices.y.index = Math.ceil(loadNrrdSlices.y.RSAMaxIndex / 2);
+    loadNrrdSlices.z.index = Math.ceil(loadNrrdSlices.z.RSAMaxIndex / 2);
 
     loadNrrdSlices.x.repaint.call(loadNrrdSlices.x);
     loadNrrdSlices.y.repaint.call(loadNrrdSlices.y);
@@ -608,12 +611,9 @@ function loadNrrd(nrrdUrl: string, name:"register"|"origin") {
 
     allRightPanelMeshes.push(nrrdMesh.x, nrrdMesh.y, nrrdMesh.z);
 
-    
-
     !!resolve && resolve({ origin: nrrdOrigin, spacing: nrrdSpacing,  ras: nrrdRas, dimensions:nrrdDimensions, bias: nrrdBias});
-
-     // reset view
-     resetNrrdImage();
+    // reset view
+    resetNrrdImage();
   };
 
   (copperScene as Copper.copperScene).loadNrrd(
@@ -627,6 +627,18 @@ function loadNrrd(nrrdUrl: string, name:"register"|"origin") {
 
 }
 
+function requestUpdateSliderSettings(){
+  const sliderSettingsValue = {
+        panelOperator,
+        dimensions:nrrdDimensions,
+        spacing: nrrdSpacing, 
+        currentValue:[
+          Math.ceil(loadNrrdSlices.x.index / nrrdSpacing[0]),
+          Math.ceil(loadNrrdSlices.y.index / nrrdSpacing[1]),
+          Math.ceil(loadNrrdSlices.z.index / nrrdSpacing[2])
+        ]} 
+  emitter.emit("sendMountSliderSettings", sliderSettingsValue)
+}
 
 async function loadBreastModel() {
 
@@ -731,8 +743,10 @@ function loadSegmentTumour(tomourUrl:string){
   (tumourSliceIndex as ISliceIndex).x = loadNrrdSlices.x.index;
   (tumourSliceIndex as ISliceIndex).y = loadNrrdSlices.y.index;
   (tumourSliceIndex as ISliceIndex).z = loadNrrdSlices.z.index;
-  });
 
+  requestUpdateSliderSettings();
+  });
+  
 }
 
 function displayAndCalculateNSR(){
@@ -898,7 +912,7 @@ function removeOldMeshes(meshSet: THREE.Object3D<THREE.Event>[]) {
 }
 
 const resetSliceIndex = (sliceIndex: ISliceIndex) => {
-  if(sliceIndex.x === 0 && sliceIndex.y === 0 && sliceIndex.z ===0 ) return;
+  if(sliceIndex.x === 0 && sliceIndex.y === 0 && sliceIndex.z ===0 )return;
 
   loadNrrdMeshes.x.renderOrder = 1;
   loadNrrdMeshes.y.renderOrder = 1;
@@ -909,7 +923,12 @@ const resetSliceIndex = (sliceIndex: ISliceIndex) => {
   loadNrrdSlices.x.repaint.call(loadNrrdSlices.x);
   loadNrrdSlices.y.repaint.call(loadNrrdSlices.y);
   loadNrrdSlices.z.repaint.call(loadNrrdSlices.z);
+  
+    // request to mount/update slider settings
+  requestUpdateSliderSettings()
 };
+
+
 
 const backTo3DView = ()=>{
   panelOperator.dispose();
