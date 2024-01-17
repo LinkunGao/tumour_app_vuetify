@@ -15,7 +15,7 @@
       class="pa-6 text-white mx-auto"
       color="surface"
       max-width="550"
-      max-height="650"
+      max-height="750"
     >
       <h4 class="text-h5 font-weight-bold mb-4">How to use:</h4>
 
@@ -54,6 +54,14 @@
 
       
 
+      <v-btn
+        block
+        class="text-none text-black mb-4"
+        color="teal-accent-3"
+        variant="flat"
+      >
+        Guide Tour
+      </v-btn>
       <v-btn
         block
         class="text-none text-black mb-4"
