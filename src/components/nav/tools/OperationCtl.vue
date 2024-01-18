@@ -1,5 +1,5 @@
 <template>
-  <v-list-group value="Operation" data-step="6" data-title="Draw Panel Settings" data-intro="Click buttons to setup the draw panel" data-tool="operationtool">
+  <v-list-group value="Operation" class="guide-operation-overall" data-tool="operationtool">
     <template v-slot:activator="{ props }">
       <v-list-item
         v-bind="props"
@@ -16,15 +16,12 @@
         stream
       ></v-progress-linear>
       <v-radio-group
-        class="radio-group"
+        class="radio-group guide-operation-functional-control"
         v-model="commFuncRadios"
-        label="Functional Controls"
+        label="Functional Controller"
         :inline="true"
         :disabled="commFuncRadiosDisabled"
         @update:modelValue="toggleFuncRadios"
-        data-step="7" data-title="Draw Panel Settings" data-intro="Using Pencil, Bursh, and Eraser need to press shift key and don't release it, 
-        then use mouse left button to draw. Sphere function is allow user to draw a sphere to identify the tumour, don't need to press shift key, 
-        use mouse left button to choose sphere center and using mouse wheel to control sphere size."
       >
         <v-radio
           v-for="(item, idx) in commFuncRadioValues"
@@ -49,14 +46,12 @@
         stream
       ></v-progress-linear>
       <v-radio-group
-        class="radio-group"
+        class="radio-group guide-operation-slider-control"
         v-model="commSliderRadios"
-        label="Slider Controls"
+        label="Slider Controller"
         :inline="true"
         :disabled="commSliderRadiosDisabled"
         @update:modelValue="toggleSliderRadios"
-        data-step="8" data-title="Draw Panel Settings" data-intro="Choose function buttons and drag slider to change draw panel or MRI settings,
-        Opacity is for mask's opacity in draw panel, B&E Size is for controlling the Brush and Eraser size. Others are controllers for MRI's contrast."
       >
         <v-radio
           v-for="(item, idx) in commSliderRadioValues"
@@ -90,8 +85,7 @@
         stream
       ></v-progress-linear>
 
-      <div  data-step="9" data-title="Draw Panel Settings" data-intro="Functional buttons: Undo:undo last operation -> Ctrl + z, 
-        Reset ZOOM: reset MRI size to origin size, CLEAR SLICE MASK: clear mask on current slice, CLEAR ALL SLICES MASKS: clear all masks under this case." data-position="right">
+      <div class="guide-operation-comm-btns">
           <v-btn
           v-for="(btn, idx) in commFuncBtnValues"
           block

@@ -1,10 +1,9 @@
 <template>
-  <div id="right_panel" ref="right_panel" data-step="18" data-title="Right 3D Panel" data-intro="Display 3D models">
+  <div id="right_panel" ref="right_panel" class="guide-right-panel">
     <div v-show="openLoading" ref="loading_container" class="loading">
       <div class="loading_text text-cyan-darken-3">Load tumour model...</div>
     </div>
-    <v-card class="value-panel mt-2" color="right-display-panel" 
-    data-step="19" data-title="Value Set Area" data-intro="Display Tumour Informations">
+    <v-card class="value-panel mt-2 guide-right-value-panel" color="right-display-panel">
       <div color="primary">
         <span>Tumour volume:</span> <span>{{ tumourVolume }} cm<sup>3</sup></span>
       </div>

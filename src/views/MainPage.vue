@@ -11,8 +11,7 @@
     <div class="d-flex justify-center align-center" ref="splitBar">
       <div
         v-show="!leftFullScreen && !rightFullScreen"
-        class="split-bar bg-split-line rounded-lg"
-        data-step="17" data-title="Split Bar" data-intro="Drag it to control panels size."
+        class="split-bar bg-split-line rounded-lg guide-main-split-bar"
       ></div>
     </div>
 

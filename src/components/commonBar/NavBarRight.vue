@@ -1,5 +1,5 @@
 <template>
-  <div class="nav dark" ref="nav_container" data-step="20" data-title="Right 3D Panel Controller" data-intro="Function controls for Right Panel.">
+  <div class="nav dark guide-right-nav-tool" ref="nav_container">
     <div class="content" id="right_nav_bar">
 
       <div v-show="showDragSlider && panelWidth >= 600 ? true : false" :class="panelWidth >1000 ? 'mx-6 px-6 slider-lg':'slider-sm'">
@@ -18,22 +18,23 @@
       </div>
         
       <div class="arrows">
-        <span
-          v-for="item in viewData"
+        <div v-for="view in viewData" class="right-views" :class="view.name">
+          <span
+          v-for="item in view.data"
           :class="{ 'disabled': isBtnDisabled }"
           @click.stop="onSigleClick(item.label)"
           @dblclick.stop="onDoubleClick(item.label)"
         >
           
-          <i class="switch_font" v-if="item.label=='reset'" :data-step="item['data-step']" :data-title="item['data-title']" :data-intro="item['data-intro']">
+          <i class="switch_font" v-if="item.label=='reset'">
             <ion-icon name="refresh-outline"></ion-icon>
           </i>
 
-          <i class="switch_font" v-else-if="item.label=='3dview'" :data-step="item['data-step']" :data-title="item['data-title']" :data-intro="item['data-intro']">
+          <i class="switch_font" v-else-if="item.label=='3dview'">
             <ion-icon name="walk-outline"></ion-icon>
           </i>
 
-          <i v-else :data-step="item['data-step']" :data-title="item['data-title']" :data-intro="item['data-intro']">
+          <i v-else>
             <img class="image" v-if="darkMode" :src="item.img_white" alt="" />
             <img class="image" v-else :src="item.img_blank" alt="" />
           </i>
@@ -42,6 +43,8 @@
             item.name
           }}</v-tooltip>
         </span>
+        </div>
+        
       </div>
     </div>
   </div>
@@ -76,58 +79,58 @@ const props = withDefaults(defineProps<Props>(), {
 const { panelWidth } = toRefs(reactive(props));
 const showDragSlider = ref(false)
 
-const viewData = [
-  {
-    name: "Sagittal view",
-    label: "sagittal",
-    img_white: sagittalImg_white,
-    img_blank: sagittalImg_blank,
-    "data-step":"21", 
-    "data-title":"3D MRI views", 
-    "data-intro":"Sagittal view: After Single-Clicking it, a slider for control slice index will appear at the left, or use mouse left click to drag to Switch slices, click mouse middel wheel for Rotate, scroll middle wheel for Zoom, right click for Pan. Double-Click for changing image position to front view"
+const viewData = {
+  twoDView:{
+    name: "guide-right-twoD-view",
+    data: [{
+      name: "Sagittal view",
+      label: "sagittal",
+      img:null,
+      img_white: sagittalImg_white,
+      img_blank: sagittalImg_blank,
+    },
+    {
+      name: "Axial view",
+      label: "axial",
+      img:null,
+      img_white: axialImg_white,
+      img_blank: axialImg_blank,
+     },
+    {
+      name: "Coronal view",
+      label: "coronal",
+      img:null,
+      img_white: coronalImg_white,
+      img_blank: coronalImg_blank,
+    },]
   },
-  {
-    name: "Axial view",
-    label: "axial",
-    img_white: axialImg_white,
-    img_blank: axialImg_blank,
-    "data-step":"22", 
-    "data-title":"3D MRI views", 
-    "data-intro":"Axial view: After Single-Clicking it, a slider for control slice index will appear at the left, or use mouse left click to drag to Switch slices, click mouse middel wheel for Rotate, scroll middle wheel for Zoom, right click for Pan. Double-Click for changing image position to front view"
-  },
-  {
-    name: "Coronal view",
-    label: "coronal",
-    img_white: coronalImg_white,
-    img_blank: coronalImg_blank,
-    "data-step":"23", 
-    "data-title":"3D MRI views", 
-    "data-intro":"Coronal view: After Single-Clicking it, a slider for control slice index will appear at the left, or use mouse left click to drag to Switch slices, click mouse middel wheel for Rotate, scroll middle wheel for Zoom, right click for Pan. Double-Click for changing image position to front view"
-  },
+  threeDView:{
+    name: "guide-right-threeD-view",
+    data:[{
+        name: "3D view",
+        label: "3dview",
+        img:null,
+        img_white: "",
+        img_blank: "",
+      },
+      {
+        name: "Reset views",
+        label: "reset",
+        img: resetImg,
+        img_white: "",
+        img_blank: "",
+      },]
+
+  }
+}
   // {
   // name:"Clock function",
   // label:"clock",
   // img:clockImg
   // },
  
-  {
-    name: "3D view",
-    label: "3dview",
-    image:null,
-    "data-step":"24", 
-    "data-title":"Back to 3D view", 
-    "data-intro":"Click it to back to 3D view, will not change the slice index and image position in 3D. Then use mouse left click to Rotate, scroll middle wheel for Zoom, right click for Pan."
-  },
-  {
-    name: "Reset views",
-    label: "reset",
-    img: resetImg,
-    "data-step":"25", 
-    "data-title":"Reset MRI to 3D view", 
-    "data-intro":"Click it to back to 3D view, will change the slice index and image position to initial status. "
-  },
+  
 
-];
 
 const slider = ref(0);
 const sliderColor = ref("grey");
@@ -359,5 +362,8 @@ function toggleSlider(val: number) {
   color: #f44336;
 }
 
-
+.right-views{
+  display: flex;
+  flex-direction: row;
+}
 </style>

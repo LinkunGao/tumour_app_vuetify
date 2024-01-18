@@ -1,5 +1,5 @@
 <template>
-  <div class="nav dark" ref="nav_container" data-step="11" data-title="Left Panel Controller" data-intro="Function controls for Left Panel.">
+  <div class="nav dark guide-left-nav-tool" ref="nav_container">
     <div class="content" id="left_nav_bar">
       <el-slider
         v-model="sliceNum"
@@ -8,23 +8,23 @@
         @click.stop
         show-input
         id="left_nav_slider"
-        data-step="12" data-title="Left Panel Controller" data-intro="Slice slider: drag to switch MRI slice."
+        class="guide-left-slider"
       />
       <div class="arrows">
-        <span @click="onSwitchSliceOrientation('x')" 
-        data-step="13" data-title="Left Panel Controller" data-intro="Switch MRI to Sagittal view, can press s key and left click on MRI to achieve precision positioning.">
-          <i class="switch_font">Sagittal</i>
-        </span>
-        <span @click="onSwitchSliceOrientation('z')"
-        data-step="14" data-title="Left Panel Controller" data-intro="Switch MRI to Axial view, can press s key and left click on MRI to achieve precision positioning.">
-          <i class="switch_font">Axial</i>
-        </span>
-        <span @click="onSwitchSliceOrientation('y')"
-        data-step="15" data-title="Left Panel Controller" data-intro="Switch MRI to Coronal view, can press s key and left click on MRI to achieve precision positioning.">
-          <i class="switch_font">Coronal</i>
-        </span>
-        <span class="save" @click="onSave()" 
-        data-step="16" data-title="Left Panel Controller" data-intro="Sync masks to 3D model in right 3D panel.">
+        <div class="left-views guide-left-views">
+          <span @click="onSwitchSliceOrientation('x')">
+            <i class="switch_font">Sagittal</i>
+          </span>
+          <span @click="onSwitchSliceOrientation('z')">
+            <i class="switch_font">Axial</i>
+          </span>
+          <span @click="onSwitchSliceOrientation('y')">
+            <i class="switch_font">Coronal</i>
+          </span>
+        </div>
+        
+
+        <span class="save guide-left-sync" @click="onSave()">
           <div>
             <!-- <ion-icon name="save-outline"></ion-icon> -->
             <ion-icon name="sync-outline"></ion-icon>
@@ -270,5 +270,9 @@ watchEffect(() => {
 }
 .save i {
   font-size: 0.5em;
+}
+.left-views{
+  display: flex;
+  flex-direction: row;
 }
 </style>
