@@ -1,5 +1,5 @@
 <template>
-  <v-list-group value="Cases">
+  <v-list-group value="Cases" data-step="4" data-title="Core Tools Control" data-intro="Choose Your Images and Contrasts">
     <template v-slot:activator="{ props }">
       <v-list-item
         v-bind="props"
@@ -42,6 +42,7 @@
       :label="switchLable"
       :loading="switchLoading"
       @toggleUpdate="toggleRegisterChanged"
+      data-step="5" data-title="Case MRI Control" data-intro="Use Switch Button to show origin or Register MRI"
     />
   </v-list-group>
 </template>

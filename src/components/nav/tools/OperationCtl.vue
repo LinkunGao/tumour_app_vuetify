@@ -1,5 +1,5 @@
 <template>
-  <v-list-group value="Operation">
+  <v-list-group value="Operation" data-step="6" data-title="Draw Panel Settings" data-intro="Click buttons to setup the draw panel" data-tool="operationtool">
     <template v-slot:activator="{ props }">
       <v-list-item
         v-bind="props"
@@ -22,6 +22,9 @@
         :inline="true"
         :disabled="commFuncRadiosDisabled"
         @update:modelValue="toggleFuncRadios"
+        data-step="7" data-title="Draw Panel Settings" data-intro="Using Pencil, Bursh, and Eraser need to press shift key and don't release it, 
+        then use mouse left button to draw. Sphere function is allow user to draw a sphere to identify the tumour, don't need to press shift key, 
+        use mouse left button to choose sphere center and using mouse wheel to control sphere size."
       >
         <v-radio
           v-for="(item, idx) in commFuncRadioValues"
@@ -52,6 +55,8 @@
         :inline="true"
         :disabled="commSliderRadiosDisabled"
         @update:modelValue="toggleSliderRadios"
+        data-step="8" data-title="Draw Panel Settings" data-intro="Choose function buttons and drag slider to change draw panel or MRI settings,
+        Opacity is for mask's opacity in draw panel, B&E Size is for controlling the Brush and Eraser size. Others are controllers for MRI's contrast."
       >
         <v-radio
           v-for="(item, idx) in commSliderRadioValues"
@@ -85,19 +90,22 @@
         stream
       ></v-progress-linear>
 
-      <v-btn
-        v-for="(btn, idx) in commFuncBtnValues"
-        block
-        density="comfortable"
-        variant="outlined"
-        class="my-1"
-        :key="idx"
-        :color="btn.color"
-        :disabled="btn.disabled"
-        @click="onBtnClick(btn.value)"
-        >{{ btn.label }}</v-btn
-      >
-
+      <div  data-step="9" data-title="Draw Panel Settings" data-intro="Functional buttons: Undo:undo last operation -> Ctrl + z, 
+        Reset ZOOM: reset MRI size to origin size, CLEAR SLICE MASK: clear mask on current slice, CLEAR ALL SLICES MASKS: clear all masks under this case." data-position="right">
+          <v-btn
+          v-for="(btn, idx) in commFuncBtnValues"
+          block
+          density="comfortable"
+          variant="outlined"
+          class="my-1"
+          :key="idx"
+          :color="btn.color"
+          :disabled="btn.disabled"
+          @click="onBtnClick(btn.value)"
+          >{{ btn.label }}</v-btn
+        >
+      </div>
+      
       <v-progress-linear
         color="nav-success"
         buffer-value="0"

@@ -13,9 +13,13 @@
   </v-navigation-drawer>
 
   <v-app-bar color="surface" class="d-flex justify-end">
-    <v-app-bar-nav-icon @click="toggleDrawer"></v-app-bar-nav-icon>
+
+    <v-app-bar-nav-icon data-step="2" data-title="Nav Bar" data-intro="Click here to expand/hide the 'Tools Core Settings'" @click="toggleDrawer"></v-app-bar-nav-icon>
+
+    <div data-step="3" data-title="Core Operations" data-intro="Discover more in next steps..." data-tool="expandtool"></div>
+    
     <!-- pink-darken-3 text-deep-orange-->
-    <v-app-bar-title>
+    <v-app-bar-title data-step="1" data-title="Welcome to App Guide Tour!" data-intro="Hi new there! 👋">
       <span class="text-capitalize"
         >Tumour Position & Extent Reporting
       </span>
@@ -69,6 +73,12 @@ function manageEmitters() {
     emitter.emit("resize-left-right-panels", {
       panel: "right",
     });
+  });
+
+  emitter.on("guide_to_drawer_status", (val)=>{
+    if(val==="open" && !drawer.value){
+      toggleDrawer();
+    }
   });
 }
 

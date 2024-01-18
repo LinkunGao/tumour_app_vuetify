@@ -59,6 +59,7 @@
         class="text-none text-black mb-4"
         color="teal-accent-3"
         variant="flat"
+        @click="guideTour"
       >
         Guide Tour
       </v-btn>
@@ -75,7 +76,77 @@
   </v-menu>
 </template>
 
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import introJs from 'intro.js';
+import { useTheme } from "vuetify";
+import emitter from "@/plugins/bus";
 
-<style scoped>
+const theme = useTheme();
+let tipclass = '';
+let helperclass = '';
+
+function guideTour() {
+
+  if(theme.global.current.value.dark){
+    tipclass = "tipText-dark";
+    helperclass = 'helperLayer-dark';
+  }else{
+    tipclass = "tipText";
+    helperclass = 'helperLayer';
+  }
+
+  emitter.emit("guide_status", "start");
+
+  setTimeout(()=>{
+    introJs().setOptions({
+        // prevLabel: "prev",
+        // nextLabel: "next",
+        // skipLabel: "Jump",
+        // doneLabel: "Finish"
+        tooltipClass: tipclass,
+        highlightClass: helperclass,
+    }).oncomplete(function () {
+        //after jump clicked
+    }).onexit(function () {
+        //after exit clicked
+        
+        emitter.emit("guide_status", "end");
+    }).onchange(function(targetElement:HTMLDivElement) {
+      if(!!targetElement){
+        var dataToolValue = targetElement.getAttribute("data-tool");
+        if(dataToolValue === "expandtool"){
+          emitter.emit("guide_to_drawer_status", "open");
+        }else if(dataToolValue === "operationtool"){
+          emitter.emit("guide_to_operation_status", "open");
+        }else if(dataToolValue == "guideend"){
+          setTimeout(() => {
+            emitter.emit("guide_status", "end");
+          }, 1000);
+          
+        }
+      }
+    }).start();
+  }, 500);
+}
+
+</script>
+
+<style>
+.tipText{
+  background-color: #ffffff;
+  box-shadow: 0 3px 30px rgba(211, 209, 209, 0.3);
+}
+.helperLayer{
+  /* z-index: -1 !important; */
+  box-shadow: #009688 0px 0px 1px 2px, rgba(33, 33, 33, 0.5) 0px 0px 0px 5000px !important;
+}
+.tipText-dark{
+  background-color: #656464;
+  box-shadow: 0 3px 30px rgb(226 217 217 / 30%);
+}
+.helperLayer-dark{
+  /* z-index: -1 !important; */
+  box-shadow: rgb(222 89 89 / 80%) 0px 0px 1px 2px, rgba(33, 33, 33, 0.5) 0px 0px 0px 5000px !important;
+}
+
 </style>

@@ -1,5 +1,6 @@
 <template>
-  <div id="bg" ref="base_container" class="dark">
+  <div id="bg" ref="base_container" class="dark"  data-step="10" data-title="Left Draw Panel" data-intro="Display MRIs, 
+  allow users to draw masks on MRI, Double-Click to expand the panel.">
     <div v-show="debug_mode" ref="c_gui" class="left_gui"></div>
     <div ref="canvas_container" class="canvas_container"></div>
     <div ref="slice_index_container" class="copper3d_sliceNumber">

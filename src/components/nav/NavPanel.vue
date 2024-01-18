@@ -15,12 +15,26 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, onMounted } from "vue";
 import ImageCtl from "./tools/NrrdImageCtl.vue";
 import OperationCtl from "./tools/OperationCtl.vue";
 import RightPanelCore from "./RightPanelCore.vue";
 import SysOpts from "./SysOpts.vue";
+import emitter from "@/plugins/bus";
 const open = ref(["Cases"]);
+
+onMounted(()=>{
+  manageEmitters();
+})
+
+function manageEmitters() {
+  emitter.on("guide_to_operation_status", (val)=>{
+    if(val==="open" && !open.value.includes("Operation")){
+      open.value.push("Operation")
+    }
+  });
+}
+
 </script>
 
 <style lang="scss"></style>

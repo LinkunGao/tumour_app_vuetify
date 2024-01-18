@@ -12,6 +12,7 @@
       <div
         v-show="!leftFullScreen && !rightFullScreen"
         class="split-bar bg-split-line rounded-lg"
+        data-step="17" data-title="Split Bar" data-intro="Drag it to control panels size."
       ></div>
     </div>
 
