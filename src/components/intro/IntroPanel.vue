@@ -146,7 +146,8 @@ function guideTour() {
           {
             title: "Draw Panel Settings",
             element: document.querySelector('.guide-operation-slider-control'),
-            intro: `Choose function buttons and drag slider to change draw panel or MRI settings,
+            intro: `Choose function buttons and drag slider to change draw panel or MRI settings (Also you can use window mode, press 'ctrl' key once to enable,
+                    then use left mouse drag horizontally to change the WindowHigh, and drag vertically to change the WindowCenter. At last, press 'ctrl' key again back to normal mode),
                     Opacity is for mask's opacity in draw panel, B&E Size is for controlling the 
                     Brush and Eraser size. Others are controllers for MRI's contrast.`,
             position: 'right',
