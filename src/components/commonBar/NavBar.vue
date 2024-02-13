@@ -1,5 +1,5 @@
 <template>
-  <div class="nav dark" ref="nav_container">
+  <div class="nav dark guide-left-nav-tool" ref="nav_container">
     <div class="content" id="left_nav_bar">
       <el-slider
         v-model="sliceNum"
@@ -8,18 +8,23 @@
         @click.stop
         show-input
         id="left_nav_slider"
+        class="guide-left-slider"
       />
       <div class="arrows">
-        <span @click="onSwitchSliceOrientation('x')">
-          <i class="switch_font">Sagittal</i>
-        </span>
-        <span @click="onSwitchSliceOrientation('z')">
-          <i class="switch_font">Axial</i>
-        </span>
-        <span @click="onSwitchSliceOrientation('y')">
-          <i class="switch_font">Coronal</i>
-        </span>
-        <span class="save" @click="onSave()">
+        <div class="left-views guide-left-views">
+          <span @click="onSwitchSliceOrientation('x')">
+            <i class="switch_font">Sagittal</i>
+          </span>
+          <span @click="onSwitchSliceOrientation('z')">
+            <i class="switch_font">Axial</i>
+          </span>
+          <span @click="onSwitchSliceOrientation('y')">
+            <i class="switch_font">Coronal</i>
+          </span>
+        </div>
+        
+
+        <span class="save guide-left-sync" @click="onSave()">
           <div>
             <!-- <ion-icon name="save-outline"></ion-icon> -->
             <ion-icon name="sync-outline"></ion-icon>
@@ -265,5 +270,9 @@ watchEffect(() => {
 }
 .save i {
   font-size: 0.5em;
+}
+.left-views{
+  display: flex;
+  flex-direction: row;
 }
 </style>

@@ -1,5 +1,5 @@
 <template>
-  <v-list-group value="Operation">
+  <v-list-group value="Operation" class="guide-operation-overall" data-tool="operationtool">
     <template v-slot:activator="{ props }">
       <v-list-item
         v-bind="props"
@@ -16,9 +16,9 @@
         stream
       ></v-progress-linear>
       <v-radio-group
-        class="radio-group"
+        class="radio-group guide-operation-functional-control"
         v-model="commFuncRadios"
-        label="Functional Controls"
+        label="Functional Controller"
         :inline="true"
         :disabled="commFuncRadiosDisabled"
         @update:modelValue="toggleFuncRadios"
@@ -46,9 +46,9 @@
         stream
       ></v-progress-linear>
       <v-radio-group
-        class="radio-group"
+        class="radio-group guide-operation-slider-control"
         v-model="commSliderRadios"
-        label="Slider Controls"
+        label="Slider Controller"
         :inline="true"
         :disabled="commSliderRadiosDisabled"
         @update:modelValue="toggleSliderRadios"
@@ -85,19 +85,21 @@
         stream
       ></v-progress-linear>
 
-      <v-btn
-        v-for="(btn, idx) in commFuncBtnValues"
-        block
-        density="comfortable"
-        variant="outlined"
-        class="my-1"
-        :key="idx"
-        :color="btn.color"
-        :disabled="btn.disabled"
-        @click="onBtnClick(btn.value)"
-        >{{ btn.label }}</v-btn
-      >
-
+      <div class="guide-operation-comm-btns">
+          <v-btn
+          v-for="(btn, idx) in commFuncBtnValues"
+          block
+          density="comfortable"
+          variant="outlined"
+          class="my-1"
+          :key="idx"
+          :color="btn.color"
+          :disabled="btn.disabled"
+          @click="onBtnClick(btn.value)"
+          >{{ btn.label }}</v-btn
+        >
+      </div>
+      
       <v-progress-linear
         color="nav-success"
         buffer-value="0"

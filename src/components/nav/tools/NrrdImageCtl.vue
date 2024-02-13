@@ -1,5 +1,5 @@
 <template>
-  <v-list-group value="Cases">
+  <v-list-group value="Cases" class="guide-cases-overall">
     <template v-slot:activator="{ props }">
       <v-list-item
         v-bind="props"
@@ -42,6 +42,7 @@
       :label="switchLable"
       :loading="switchLoading"
       @toggleUpdate="toggleRegisterChanged"
+      class="guide-case-switch"
     />
   </v-list-group>
 </template>

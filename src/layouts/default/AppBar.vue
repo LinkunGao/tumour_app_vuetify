@@ -13,9 +13,13 @@
   </v-navigation-drawer>
 
   <v-app-bar color="surface" class="d-flex justify-end">
-    <v-app-bar-nav-icon @click="toggleDrawer"></v-app-bar-nav-icon>
+
+    <v-app-bar-nav-icon class="guide-bar-nav" @click="toggleDrawer"></v-app-bar-nav-icon>
+
+    <div class="guide-expand-panel" data-tool="expandtool"></div>
+    
     <!-- pink-darken-3 text-deep-orange-->
-    <v-app-bar-title>
+    <v-app-bar-title >
       <span class="text-capitalize"
         >Tumour Position & Extent Reporting
       </span>
@@ -69,6 +73,12 @@ function manageEmitters() {
     emitter.emit("resize-left-right-panels", {
       panel: "right",
     });
+  });
+
+  emitter.on("guide_to_drawer_status", (val)=>{
+    if(val==="open" && !drawer.value){
+      toggleDrawer();
+    }
   });
 }
 

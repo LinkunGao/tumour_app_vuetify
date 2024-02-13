@@ -11,7 +11,7 @@
     <div class="d-flex justify-center align-center" ref="splitBar">
       <div
         v-show="!leftFullScreen && !rightFullScreen"
-        class="split-bar bg-split-line rounded-lg"
+        class="split-bar bg-split-line rounded-lg guide-main-split-bar"
       ></div>
     </div>
 

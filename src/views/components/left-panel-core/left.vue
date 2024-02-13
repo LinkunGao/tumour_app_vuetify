@@ -1,5 +1,5 @@
 <template>
-  <div id="bg" ref="base_container" class="dark">
+  <div id="bg" ref="base_container" class="dark guide-left-panel">
     <div v-show="debug_mode" ref="c_gui" class="left_gui"></div>
     <div ref="canvas_container" class="canvas_container"></div>
     <div ref="slice_index_container" class="copper3d_sliceNumber">
