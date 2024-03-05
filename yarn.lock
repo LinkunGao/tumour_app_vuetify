@@ -825,10 +825,10 @@ copper3d-tree@^1.0.1:
     ndarray-select "^1.0.0"
     typedarray-pool "^1.0.0"
 
-copper3d@^2.0.8:
-  version "2.0.8"
-  resolved "https://registry.yarnpkg.com/copper3d/-/copper3d-2.0.8.tgz#2e2fd51ee096829cce2eb31033a630c54bae4020"
-  integrity sha512-ebpk6NOBpOrjIa19as7E/GE4rhqMysfrmZYqDXId1RfUQpVkvDgK93t+yIvaQzLqOxtPwuYM6XDLv3y/mOIRTA==
+copper3d@^2.0.9:
+  version "2.0.9"
+  resolved "https://registry.yarnpkg.com/copper3d/-/copper3d-2.0.9.tgz#59be36f1fd16683209ecbb1b8e58709448e036b8"
+  integrity sha512-Sy/yY7171cMg3C2mHNKFWiVy8YNZSgHO54Xv9vEl/uI8YRV3lS8f73UWebWpvm8xr5b4+UnAgqKMRBz1siA4Fw==
   dependencies:
     "@types/dat.gui" "^0.7.9"
     "@types/three" "^0.152.0"
@@ -839,7 +839,7 @@ copper3d@^2.0.8:
     file-saver "^2.0.5"
     glsl-blend-soft-light "^1.0.5"
     glsl-film-grain "^1.0.4"
-    three "^0.158.0"
+    three "^0.161.0"
 
 copper3d_plugin_heart_k@^1.0.14:
   version "1.0.14"
@@ -2329,10 +2329,10 @@ text-table@^0.2.0:
   resolved "https://registry.yarnpkg.com/text-table/-/text-table-0.2.0.tgz#7f5ee823ae805207c00af2df4a84ec3fcfa570b4"
   integrity sha512-N+8UisAXDGk8PFXP4HAzVR9nbfmVJ3zYLAWiTIoqC5v5isinhr+r5uaO8+7r3BMfuNIufIsA7RdpVgacC2cSpw==
 
-three@^0.158.0:
-  version "0.158.0"
-  resolved "https://registry.yarnpkg.com/three/-/three-0.158.0.tgz#03ddd5b60ce9c31be8fb69f27a6d9efd49908ac3"
-  integrity sha512-TALj4EOpdDPF1henk2Q+s17K61uEAAWQ7TJB68nr7FKxqwyDr3msOt5IWdbGm4TaWKjrtWS8DJJWe9JnvsWOhQ==
+three@^0.161.0:
+  version "0.161.0"
+  resolved "https://registry.yarnpkg.com/three/-/three-0.161.0.tgz#38aafaa82fe5467fde2e33933515d1b6beb17d91"
+  integrity sha512-LC28VFtjbOyEu5b93K0bNRLw1rQlMJ85lilKsYj6dgTu+7i17W+JCCEbvrpmNHF1F3NAUqDSWq50UD7w9H2xQw==
 
 through2@^0.6.3:
   version "0.6.5"
