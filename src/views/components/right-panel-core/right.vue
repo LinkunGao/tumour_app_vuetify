@@ -610,7 +610,7 @@ function loadNrrd(nrrdUrl: string, name:"register"|"origin") {
     nrrdMesh.x.name = "Sagittal";
     nrrdMesh.y.name = "Cornal";
     nrrdMesh.z.name = "Axial";
-    // copperScene.addObject(nrrdMesh.x);
+    copperScene.addObject(nrrdMesh.x);
     copperScene.addObject(nrrdMesh.y);
     copperScene.addObject(nrrdMesh.z);
 
