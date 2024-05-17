@@ -2,7 +2,7 @@
   <div class="main-container" ref="mainContainer">
     <div
       v-show="!rightFullScreen"
-      class="box bg-surface ml-1 my-1 mt-2 rounded"
+      class="box bg-image_view ml-1 my-1 mt-2 rounded"
       ref="left_container"
       @dblclick.stop="togglePanelActive('left', $event)"
     >
@@ -17,7 +17,7 @@
 
     <div
       v-show="!leftFullScreen"
-      class="box box_right bg-surface mr-1 my-1 mt-2 rounded"
+      class="box box_right bg-image_view mr-1 my-1 mt-2 rounded"
       ref="right_container"
       @dblclick.stop="togglePanelActive('right', $event)"
     >

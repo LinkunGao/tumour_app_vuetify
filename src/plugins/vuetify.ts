@@ -42,7 +42,11 @@ const darkTheme: ThemeDefinition = {
   dark: true,
   colors: {
     background: "#282c34",
-    surface: "#21252b",
+    // surface: "#21252b",
+    surface: "#232324",
+    image_view:"#000",
+    // background: "#232324",
+    // surface: "#000",
     primary: "#fff8ec",
     "primary-font": "#fff8ec",
     "secondary-font": "#009688",

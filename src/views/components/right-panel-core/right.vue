@@ -1000,8 +1000,8 @@ const resetNrrdImage = () => {
   top: 0px;
   width: 200px;
   height: 150px;
-  background-color: rgba(0, 0, 0, 0.2);
-  border: 2px solid rgba(0, 0, 0, 0.7);
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 2px solid rgba(255, 255, 255, 0.3);
   border-radius: 10px;
   padding: 10px 15px;
   font-size: smaller;
