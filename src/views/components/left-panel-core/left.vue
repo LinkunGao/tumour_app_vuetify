@@ -11,6 +11,14 @@
       @on-close-dialog="onCloseDialog"
       @get-load-files-urls="readyToLoad"
     ></Upload>
+
+    <div v-show="showCalculatorValue" class="left-value-panel mt-2">
+      <div class="dts"><span>DTS:</span> <span>{{ 0 }} mm</span></div>
+      <div class="dtr"><span>DTR:</span> <span>{{ 0 }} mm</span></div>
+      <div class="dtn">
+        <span>DTN:</span> <span>{{ 0 }} mm</span>
+      </div>
+    </div>
   </div>
   <div
     v-show="panelWidth >= 600 ? true : false"
@@ -33,9 +41,9 @@
 </template>
 <script setup lang="ts">
 import { GUI, GUIController } from "dat.gui";
-import * as Copper from "copper3d";
+// import * as Copper from "copper3d";
 import "copper3d/dist/css/style.css";
-// import * as Copper from "@/ts/index";
+import * as Copper from "@/ts/index";
 import loadingGif from "@/assets/loading.svg";
 
 import NavBar from "@/components/commonBar/NavBar.vue";
@@ -155,11 +163,20 @@ let regUrls = ref<ICaseUrls>({ nrrdUrls: [], jsonUrl: "" });
 const eraserUrls = getEraserUrlsForOffLine();
 const cursorUrls = getCursorUrlsForOffLine();
 
+const showCalculatorValue = ref(false);
+
 withDefaults(defineProps<Props>(), {
   panelWidth: 1000,
 });
 
 function onEmitter() {
+  emitter.on("open_calculate_box", (val)=>{
+    showCalculatorValue.value = true
+  })
+  emitter.on("close_calculate_box", (val)=>{
+    showCalculatorValue.value = false
+  })
+
   emitter.on("show_debug_mode", (flag) => {
     debug_mode.value = flag as boolean;
   });
@@ -882,5 +899,39 @@ function switchRegCheckBoxStatus(
 .copper3D_drawingCanvasContainer {
   max-width: 80%;
   max-height: 80%;
+}
+
+.left-value-panel {
+  position: absolute;
+  left: 15px;
+  top: 0px;
+  width: 200px;
+  height: 80px;
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 10px;
+  padding: 10px 15px;
+  font-size: smaller;
+  user-select: text;
+  -webkit-user-select: text;
+  /* display: flex; */
+  /* align-items: center; */
+  /* justify-content: center; */
+}
+
+.left-value-panel > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.left-value-panel .dts {
+  color: yellow;
+}
+.left-value-panel .dtr {
+  color: darkcyan;
+}
+.left-value-panel .dtn {
+  color: hotpink;
 }
 </style>

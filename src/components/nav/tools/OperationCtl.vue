@@ -9,6 +9,7 @@
       ></v-list-item>
     </template>
     <!-- Functional Control -->
+    <Calculator />
     <v-container fluid>
       <v-progress-linear
         color="nav-success-2"
@@ -106,13 +107,14 @@
         stream
       ></v-progress-linear>
     </v-container>
-
     <OperationAdvance />
+    
   </v-list-group>
 </template>
 
 <script setup lang="ts">
 import OperationAdvance from "./advance/OperationAdvance.vue";
+import Calculator from "./advance/Calculator.vue";
 import { ref, onMounted } from "vue";
 import emitter from "@/plugins/bus";
 
@@ -146,6 +148,7 @@ const commFuncRadioValues = ref([
   { label: "Sphere", value: "sphere", color: "warning" },
   { label: "Eraser", value: "Eraser", color: "error" },
   { label: "Brush", value: "brush", color: "info" },
+  { label: "Calculate Distance", value: "calculator", color: "calculator" },
 ]);
 
 const commSliderRadioValues = ref([
@@ -189,6 +192,7 @@ onMounted(() => {
 
 function manageEmitters() {
   emitter.on("finishloadcases", (val) => {
+    console.log(val)
     guiSettings.value = val;
     commSliderRadios.value = "globalAlpha";
     updateSliderSettings();
@@ -227,6 +231,12 @@ function dragToChangeImageWindow(type:"windowHigh"|"windowLow", step:number){
 }
 
 function toggleFuncRadios(val: any) {
+
+  if (val === "calculator"){
+    emitter.emit("open_calculate_box", "Calculator")
+    return
+  }
+  emitter.emit("close_calculate_box", "Calculator")
   if (val === "sphere") {
     guiSettings.value.guiState["sphere"] = true;
   } else {

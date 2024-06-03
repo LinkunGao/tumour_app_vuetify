@@ -3,7 +3,7 @@
     <div v-show="openLoading" ref="loading_container" class="loading">
       <div class="loading_text text-cyan-darken-3">Load tumour model...</div>
     </div>
-    <v-card class="value-panel mt-2 guide-right-value-panel" color="right-display-panel">
+    <v-card class="right-value-panel mt-2 guide-right-value-panel" color="right-display-panel">
       <div color="primary">
         <span>Tumour volume:</span> <span>{{ tumourVolume }} cm<sup>3</sup></span>
       </div>
@@ -34,10 +34,10 @@
 <script setup lang="ts">
 import { GUI } from "dat.gui";
 import * as THREE from "three";
-import * as Copper from "copper3d";
+// import * as Copper from "copper3d";
 import "copper3d/dist/css/style.css";
 import createKDTree from "copper3d-tree";
-// import * as Copper from "@/ts/index";
+import * as Copper from "@/ts/index";
 import {
   onMounted,
   ref,
@@ -994,7 +994,7 @@ const resetNrrdImage = () => {
 .loading_text {
   order: 3;
 }
-.value-panel {
+.right-value-panel {
   position: absolute;
   left: 0px;
   top: 0px;
@@ -1012,7 +1012,7 @@ const resetNrrdImage = () => {
   /* justify-content: center; */
 }
 
-.value-panel > div {
+.right-value-panel > div {
   display: flex;
   align-items: center;
   justify-content: space-between;
