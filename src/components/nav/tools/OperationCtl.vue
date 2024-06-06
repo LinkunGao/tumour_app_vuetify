@@ -192,7 +192,6 @@ onMounted(() => {
 
 function manageEmitters() {
   emitter.on("finishloadcases", (val) => {
-    console.log(val)
     guiSettings.value = val;
     commSliderRadios.value = "globalAlpha";
     updateSliderSettings();
@@ -232,34 +231,41 @@ function dragToChangeImageWindow(type:"windowHigh"|"windowLow", step:number){
 
 function toggleFuncRadios(val: any) {
 
-  if (val === "calculator"){
+  if(val === "calculator"){
     emitter.emit("open_calculate_box", "Calculator")
-    return
-  }
-  emitter.emit("close_calculate_box", "Calculator")
-  if (val === "sphere") {
-    guiSettings.value.guiState["sphere"] = true;
-  } else {
+    guiSettings.value.guiState["calculator"] = true;
     guiSettings.value.guiState["sphere"] = false;
-    if (val === "Eraser") {
-      guiSettings.value.guiState["Eraser"] = true;
+  }else{
+    emitter.emit("close_calculate_box", "Calculator")
+    guiSettings.value.guiState["calculator"] = false;
+    if (val === "sphere") {
+      guiSettings.value.guiState["sphere"] = true;
     } else {
-      guiSettings.value.guiState["Eraser"] = false;
-      if (val === "segmentation") {
-        guiSettings.value.guiState["segmentation"] = true;
+      guiSettings.value.guiState["sphere"] = false;
+      if (val === "Eraser") {
+        guiSettings.value.guiState["Eraser"] = true;
       } else {
-        guiSettings.value.guiState["segmentation"] = false;
-        guiSettings.value.guiSetting["segmentation"].onChange();
-        return;
+        guiSettings.value.guiState["Eraser"] = false;
+        if (val === "segmentation") {
+          guiSettings.value.guiState["segmentation"] = true;
+        } else {
+          guiSettings.value.guiState["segmentation"] = false;
+          guiSettings.value.guiSetting["segmentation"].onChange();
+          return;
+        }
       }
     }
   }
+  
 
   if(prebtn.value==="sphere" && prebtn!==val){
     guiSettings.value.guiSetting["sphere"].onChange();
   }
+  if(prebtn.value==="calculator" && prebtn!==val){
+    guiSettings.value.guiSetting["calculator"].onChange();
+  }
 
-  prebtn.value=val;
+  prebtn.value=val;  
   guiSettings.value.guiSetting[commFuncRadios.value].onChange();
 }
 

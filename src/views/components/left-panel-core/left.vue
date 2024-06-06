@@ -12,13 +12,20 @@
       @get-load-files-urls="readyToLoad"
     ></Upload>
 
-    <div v-show="showCalculatorValue" class="left-value-panel mt-2">
+    <!-- <div v-show="showCalculatorValue" class="left-value-panel mt-2">
       <div class="dts"><span>DTS:</span> <span>{{ 0 }} mm</span></div>
       <div class="dtr"><span>DTR:</span> <span>{{ 0 }} mm</span></div>
       <div class="dtn">
         <span>DTN:</span> <span>{{ 0 }} mm</span>
       </div>
-    </div>
+    </div> -->
+    <v-card v-show="showCalculatorValue" class="left-value-panel mt-2">
+      <div class="dts"><span>DTS:</span> <span>{{ 0 }} mm</span></div>
+      <div class="dtr"><span>DTR:</span> <span>{{ 0 }} mm</span></div>
+      <div class="dtn">
+        <span>DTN:</span> <span>{{ 0 }} mm</span>
+      </div>
+    </v-card>
   </div>
   <div
     v-show="panelWidth >= 600 ? true : false"
@@ -902,18 +909,19 @@ function switchRegCheckBoxStatus(
 }
 
 .left-value-panel {
-  position: absolute;
+  position: absolute !important;
+  z-index: 10000;
   left: 15px;
   top: 0px;
   width: 200px;
   height: 80px;
-  background-color: rgba(255, 255, 255, 0.1);
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-radius: 10px;
-  padding: 10px 15px;
-  font-size: smaller;
-  user-select: text;
-  -webkit-user-select: text;
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  border: 2px solid rgba(255, 255, 255, 0.3) !important;
+  border-radius: 10px !important;
+  padding: 10px 15px !important;
+  font-size: smaller !important;
+  user-select: text !important;
+  -webkit-user-select: text !important;
   /* display: flex; */
   /* align-items: center; */
   /* justify-content: center; */
@@ -926,7 +934,7 @@ function switchRegCheckBoxStatus(
 }
 
 .left-value-panel .dts {
-  color: yellow;
+  color: #FFEB3B;
 }
 .left-value-panel .dtr {
   color: darkcyan;

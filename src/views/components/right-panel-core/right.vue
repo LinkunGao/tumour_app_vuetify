@@ -1019,7 +1019,7 @@ const resetNrrdImage = () => {
 }
 
 .skin {
-  color: yellow;
+  color: #FFEB3B;
 }
 .ribcage {
   color: darkcyan;

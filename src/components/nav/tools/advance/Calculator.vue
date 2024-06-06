@@ -30,6 +30,11 @@
             :color="item.color"
           ></v-radio>
         </v-radio-group>
+        <v-btn
+        block
+        density="comfortable"
+        @click="onBtnClick('finish')"
+        >Finish</v-btn>
         <v-progress-linear
           color="nav-success-2"
           buffer-value="0"
@@ -44,11 +49,11 @@
   import emitter from "@/plugins/bus";
   
   // buttons
-  const calculatorPickerRadios = ref("");
+  const calculatorPickerRadios = ref("tumour");
   const calculatorPickerRadiosDisabled = ref(true);
   
   const commFuncRadioValues = ref([
-    { label: "Tumour", value: "tumour", color: "#4CAF50" },
+    // { label: "Tumour", value: "tumour", color: "#4CAF50" },
     { label: "Skin", value: "skin", color: "#FFEB3B" },
     { label: "Nipple", value: "nipple", color: "#E91E63" },
     { label: "Ribcage", value: "ribcage", color: "#2196F3" },
@@ -67,16 +72,33 @@
       calculatorPickerRadiosDisabled.value = false;
     });
     emitter.on("open_calculate_box", (val)=>{
-      calculatorPickerRadiosDisabled.value = false
+      calculatorPickerRadiosDisabled.value = false;
     })
     emitter.on("close_calculate_box", (val)=>{
-      calculatorPickerRadiosDisabled.value = true
+      calculatorPickerRadiosDisabled.value = true;
     })
   }
   
   function toggleCalculatorPickerRadios(val: string | null) {
-    if (val === null) return;
+    if (val === "skin"){
+      // "tumour" | "skin" | "nipple" | "ribcage"
+      guiSettings.value.guiState["cal_distance"] = "skin";
+    }
+    if (val === "nipple"){
+      guiSettings.value.guiState["cal_distance"] = "nipple";
+    }
+    if (val === "ribcage"){
+      guiSettings.value.guiState["cal_distance"] = "ribcage";
+    }
+
+    guiSettings.value.guiSetting["cal_distance"].onChange(calculatorPickerRadios.value);
     
+  }
+
+  function onBtnClick(val:string){
+    calculatorPickerRadios.value = "tumour";
+    guiSettings.value.guiState["cal_distance"] = "tumour";
+    calculatorPickerRadiosDisabled.value = true;
   }
   
   </script>
