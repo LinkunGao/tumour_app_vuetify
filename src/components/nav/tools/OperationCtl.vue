@@ -117,6 +117,8 @@ import OperationAdvance from "./advance/OperationAdvance.vue";
 import Calculator from "./advance/Calculator.vue";
 import { ref, onMounted } from "vue";
 import emitter from "@/plugins/bus";
+import * as Copper from "@/ts/index";
+// import * as Copper from "copper3d";
 
 // Functional Controls
 const commFuncRadios = ref("segmentation");
@@ -142,6 +144,7 @@ const btnClearAllDisabled = ref(true);
 const contrastDragSensitivity = ref(25);
 
 const guiSettings = ref<any>();
+let nrrdTools:Copper.NrrdTools;
 
 const commFuncRadioValues = ref([
   { label: "Pencil", value: "segmentation", color: "success" },
@@ -191,6 +194,25 @@ onMounted(() => {
 });
 
 function manageEmitters() {
+
+  emitter.on("caseswitched", (casename)=>{
+    try{
+      setTimeout(()=>{
+        commFuncRadios.value = "segmentation"
+      },500)
+    }catch(e){
+      console.log("first time load images -- ignore");
+    }
+    commFuncRadiosDisabled.value = true;
+    commSliderRadiosDisabled.value = true;
+    sliderDisabled.value = true;
+
+    btnUndoDisabled.value = true;
+    btnResetZoomDisabled.value = true;
+    btnClearDisabled.value = true;
+    btnClearAllDisabled.value = true;
+  });
+
   emitter.on("finishloadcases", (val) => {
     guiSettings.value = val;
     commSliderRadios.value = "globalAlpha";
@@ -211,6 +233,10 @@ function manageEmitters() {
   emitter.on("dragImageWindowHigh", (step)=>{
     dragToChangeImageWindow("windowHigh", step as number);
   })
+  // xyz: 84 179 74
+  emitter.on("loadcalculatortumour", (tool)=>{
+    nrrdTools = tool as Copper.NrrdTools
+  });
 }
 
 function dragToChangeImageWindow(type:"windowHigh"|"windowLow", step:number){
@@ -229,12 +255,17 @@ function dragToChangeImageWindow(type:"windowHigh"|"windowLow", step:number){
  
 }
 
+function setupTumourSpherePosition(){
+  nrrdTools.setCalculateDistanceSphere(84, 179, 74, "tumour");
+}
+
 function toggleFuncRadios(val: any) {
 
   if(val === "calculator"){
     emitter.emit("open_calculate_box", "Calculator")
     guiSettings.value.guiState["calculator"] = true;
     guiSettings.value.guiState["sphere"] = false;
+    setupTumourSpherePosition()
   }else{
     emitter.emit("close_calculate_box", "Calculator")
     guiSettings.value.guiState["calculator"] = false;

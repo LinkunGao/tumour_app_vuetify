@@ -802,7 +802,7 @@ function updateTumourPanelInfo(tumourPosition: THREE.Vector3){
     const clockInfo = getClosestNipple(nippleLeft, nippleRight, tumourPosition);
 
     nippleDist.value = clockInfo.dist;
-    console.log(clockInfo.radial_distance, nippleCentralLimit);
+    // console.log(clockInfo.radial_distance, nippleCentralLimit);
 
     if (clockInfo.radial_distance < nippleCentralLimit) {
       nippleClock.value = "central";

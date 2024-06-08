@@ -20,11 +20,9 @@
       </div>
     </div> -->
     <v-card v-show="showCalculatorValue" class="left-value-panel mt-2">
-      <div class="dts"><span>DTS:</span> <span>{{ 0 }} mm</span></div>
-      <div class="dtr"><span>DTR:</span> <span>{{ 0 }} mm</span></div>
-      <div class="dtn">
-        <span>DTN:</span> <span>{{ 0 }} mm</span>
-      </div>
+      <div class="dts"><span>DTS:</span> <span>{{ dts }} mm</span></div>
+      <div class="dtn"><span>DTN:</span> <span>{{ dtn }} mm</span></div>
+      <div class="dtr"><span>DTR:</span> <span>{{ dtr }} mm</span></div>
     </v-card>
   </div>
   <div
@@ -136,6 +134,10 @@ let currentCaseId = "";
 let regCheckboxElement: HTMLInputElement;
 
 let showNavToolsBar = ref(true);
+
+let dts = ref(0);
+let dtn = ref(0);
+let dtr = ref(0);
 
 let state = {
   showContrast: false,
@@ -422,6 +424,27 @@ const getSphereData = async (sphereOrigin: number[], sphereRadius: number) => {
   await sendSaveSphere(sphereData);
 };
 
+function distance3D(x1:number, y1:number, z1:number, x2:number, y2:number, z2:number) {
+    let dx = x2 - x1;
+    let dy = y2 - y1;
+    let dz = z2 - z1;
+    return Math.sqrt(dx * dx + dy * dy + dz * dz);
+}
+
+const getCalculateSpherePositionsData = (tumourSphereOrigin:Copper.ICommXYZ, skinSphereOrigin:Copper.ICommXYZ, ribSphereOrigin:Copper.ICommXYZ, nippleSphereOrigin:Copper.ICommXYZ, aix:"x"|"y"|"z")=>{
+  if(tumourSphereOrigin === null) return;
+
+  if (skinSphereOrigin !== null){
+    dts.value = Number(distance3D(tumourSphereOrigin[aix][0], tumourSphereOrigin[aix][1], tumourSphereOrigin[aix][2], skinSphereOrigin[aix][0], skinSphereOrigin[aix][1], skinSphereOrigin[aix][2]).toFixed(2));
+  }
+  if (ribSphereOrigin !== null){
+    dtr.value = Number(distance3D(tumourSphereOrigin[aix][0], tumourSphereOrigin[aix][1], tumourSphereOrigin[aix][2], ribSphereOrigin[aix][0], ribSphereOrigin[aix][1], ribSphereOrigin[aix][2]).toFixed(2));
+  }
+  if (nippleSphereOrigin !== null){
+    dtn.value = Number(distance3D(tumourSphereOrigin[aix][0], tumourSphereOrigin[aix][1], tumourSphereOrigin[aix][2], nippleSphereOrigin[aix][0], nippleSphereOrigin[aix][1], nippleSphereOrigin[aix][2]).toFixed(2));
+  }
+}
+
 const getMaskData = async (
   image: ImageData,
   sliceId: number,
@@ -503,11 +526,13 @@ watchEffect(() => {
         nrrdTools.drag({
           getSliceNum,
         });
-        nrrdTools.draw({ getMaskData, getSphereData });
+        nrrdTools.draw({ getMaskData, getSphereData, getCalculateSpherePositionsData});
         nrrdTools.setupGUI(gui);
         nrrdTools.enableContrastDragEvents(getContrastMove)
         scene?.addPreRenderCallbackFunction(nrrdTools.start);
         setUpGuiAfterLoading();
+        // xyz: 84 179 74
+        emitter.emit("loadcalculatortumour", nrrdTools);
       } else {
         nrrdTools.redrawMianPreOnDisplayCanvas();
       }
