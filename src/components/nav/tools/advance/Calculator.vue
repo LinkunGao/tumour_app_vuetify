@@ -66,10 +66,15 @@
   });
   
   function manageEmitters() {
+    emitter.on("caseswitched", async (casename)=>{
+      onBtnClick("load case");
+      emitter.emit("close_calculate_box", "Calculator");
+  });
     emitter.on("finishloadcases", (val) => {
       guiSettings.value = val;
       calculatorPickerRadios.value = "tumour";
       calculatorPickerRadiosDisabled.value = false;
+      
     });
     emitter.on("open_calculate_box", (val)=>{
       calculatorPickerRadiosDisabled.value = false;
@@ -96,9 +101,11 @@
   }
 
   function onBtnClick(val:string){
-    calculatorPickerRadios.value = "tumour";
-    guiSettings.value.guiState["cal_distance"] = "tumour";
-    calculatorPickerRadiosDisabled.value = true;
+    if (!!guiSettings.value){
+      calculatorPickerRadios.value = "tumour";
+      guiSettings.value.guiState["cal_distance"] = "tumour";
+      calculatorPickerRadiosDisabled.value = true;
+    }
   }
   
   </script>

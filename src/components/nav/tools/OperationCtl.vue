@@ -116,9 +116,17 @@
 import OperationAdvance from "./advance/OperationAdvance.vue";
 import Calculator from "./advance/Calculator.vue";
 import { ref, onMounted } from "vue";
+import { storeToRefs } from "pinia";
 import emitter from "@/plugins/bus";
 import * as Copper from "@/ts/index";
+import {
+  useTumourWindowStore
+} from "@/store/app";
 // import * as Copper from "copper3d";
+
+// load tumour window
+const { tumourWindow } = storeToRefs(useTumourWindowStore());
+const { getTumourWindowChrunk } = useTumourWindowStore();
 
 // Functional Controls
 const commFuncRadios = ref("segmentation");
@@ -145,6 +153,8 @@ const contrastDragSensitivity = ref(25);
 
 const guiSettings = ref<any>();
 let nrrdTools:Copper.NrrdTools;
+
+type TTumourCenter = { center: { x: number; y: number; z: number; }};
 
 const commFuncRadioValues = ref([
   { label: "Pencil", value: "segmentation", color: "success" },
@@ -195,7 +205,7 @@ onMounted(() => {
 
 function manageEmitters() {
 
-  emitter.on("caseswitched", (casename)=>{
+  emitter.on("caseswitched", async (casename)=>{
     try{
       setTimeout(()=>{
         commFuncRadios.value = "segmentation"
@@ -211,6 +221,7 @@ function manageEmitters() {
     btnResetZoomDisabled.value = true;
     btnClearDisabled.value = true;
     btnClearAllDisabled.value = true;
+    await getTumourWindowChrunk(casename as string);
   });
 
   emitter.on("finishloadcases", (val) => {
@@ -256,7 +267,10 @@ function dragToChangeImageWindow(type:"windowHigh"|"windowLow", step:number){
 }
 
 function setupTumourSpherePosition(){
-  nrrdTools.setCalculateDistanceSphere(84, 179, 74, "tumour");
+
+  if (!!tumourWindow.value){
+    nrrdTools.setCalculateDistanceSphere((tumourWindow.value as TTumourCenter).center.x, (tumourWindow.value as TTumourCenter).center.y, (tumourWindow.value as TTumourCenter).center.z, "tumour");
+  }
 }
 
 function toggleFuncRadios(val: any) {
@@ -266,6 +280,9 @@ function toggleFuncRadios(val: any) {
     guiSettings.value.guiState["calculator"] = true;
     guiSettings.value.guiState["sphere"] = false;
     setupTumourSpherePosition()
+    const now = new Date();
+    console.log(now.getHours()+":", now.getMinutes()+":", now.getSeconds());
+    
   }else{
     emitter.emit("close_calculate_box", "Calculator")
     guiSettings.value.guiState["calculator"] = false;
