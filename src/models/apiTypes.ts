@@ -109,6 +109,15 @@ export interface IRibSkinPoints {
   Datapoints: number[][];
 }
 
+export interface ITumourWindow {
+  center:{
+    x:number;
+    y:number;
+    z:number
+  }
+}
+
+
 export interface IRequests {
   url: string;
   params: any;
