@@ -33,6 +33,7 @@
         <v-btn
         block
         density="comfortable"
+        :disabled="calculatorPickerRadiosDisabled"
         @click="onBtnClick('finish')"
         >Finish</v-btn>
         <v-progress-linear
@@ -60,6 +61,13 @@
   ]);
   
   const guiSettings = ref<any>();
+  const startTime = ref<number[]>([0,0,0]);
+  const skinTime = ref<string>();
+  const nippleTime = ref<string>();
+  const ribTime = ref<string>();
+  const finishTime = ref<string>();
+    
+
   
   onMounted(() => {
     manageEmitters();
@@ -67,21 +75,55 @@
   
   function manageEmitters() {
     emitter.on("caseswitched", async (casename)=>{
-      onBtnClick("load case");
+      if (!!guiSettings.value && guiSettings.value.guiState["calculator"]) onBtnClick("load case");
       emitter.emit("close_calculate_box", "Calculator");
-  });
+    });
     emitter.on("finishloadcases", (val) => {
       guiSettings.value = val;
       calculatorPickerRadios.value = "tumour";
-      calculatorPickerRadiosDisabled.value = false;
-      
+      if(!!guiSettings.value && guiSettings.value.guiState["calculator"]) calculatorPickerRadiosDisabled.value = false;
     });
     emitter.on("open_calculate_box", (val)=>{
-      calculatorPickerRadiosDisabled.value = false;
-    })
+      calculatorPickerRadiosDisabled.value = false;      
+    });
     emitter.on("close_calculate_box", (val)=>{
       calculatorPickerRadiosDisabled.value = true;
+      onBtnClick("close calculate")
+    });
+    emitter.on("calculator timer", (status)=>{
+      calculatorTimerReport(status as string);
     })
+  }
+
+  function calculatorTimerReport(status:string){
+
+    const now = new Date();
+    const currentTime = [now.getHours(), now.getMinutes(), now.getSeconds()]
+    switch (status) {
+        case "start":
+          console.log("start timer: ", now.getHours()+":", now.getMinutes()+":", now.getSeconds());
+          startTime.value = currentTime;
+          nippleTime.value = "";
+          skinTime.value = "";
+          ribTime.value = "";
+          finishTime.value = "";
+          break;
+        case "skin":
+          console.log("skin timer: ", now.getHours()+":", now.getMinutes()+":", now.getSeconds());
+          break;
+        case "nipple":
+          console.log("nipple timer: ", now.getHours()+":", now.getMinutes()+":", now.getSeconds());
+          break;
+        case "ribcage":
+          console.log("ribcage timer: ", now.getHours()+":", now.getMinutes()+":", now.getSeconds());
+          break;
+        case "finish":
+          console.log("finish timer: ", now.getHours()+":", now.getMinutes()+":", now.getSeconds());
+          break;
+      
+        default:
+          break;
+      }
   }
   
   function toggleCalculatorPickerRadios(val: string | null) {
@@ -105,6 +147,8 @@
       calculatorPickerRadios.value = "tumour";
       guiSettings.value.guiState["cal_distance"] = "tumour";
       calculatorPickerRadiosDisabled.value = true;
+
+      calculatorTimerReport("finish")
     }
   }
   

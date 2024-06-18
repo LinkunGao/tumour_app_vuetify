@@ -139,6 +139,7 @@ let dts = ref(0);
 let dtn = ref(0);
 let dtr = ref(0);
 
+
 let state = {
   showContrast: false,
   switchCase: "",
@@ -443,6 +444,12 @@ const getCalculateSpherePositionsData = (tumourSphereOrigin:Copper.ICommXYZ, ski
    if (nippleSphereOrigin !== null){
      dtn.value = Number(distance3D(tumourSphereOrigin[aix][0], tumourSphereOrigin[aix][1], tumourSphereOrigin[aix][2], nippleSphereOrigin[aix][0], nippleSphereOrigin[aix][1], nippleSphereOrigin[aix][2]).toFixed(2));
    }
+   
+   // send status to calculator component
+   if (nrrdTools.gui_states.cal_distance !== "tumour"){
+    emitter.emit("calculator timer", nrrdTools.gui_states.cal_distance);
+   }
+   
 }
 
 const getMaskData = async (

@@ -280,9 +280,7 @@ function toggleFuncRadios(val: any) {
     guiSettings.value.guiState["calculator"] = true;
     guiSettings.value.guiState["sphere"] = false;
     setupTumourSpherePosition()
-    const now = new Date();
-    console.log(now.getHours()+":", now.getMinutes()+":", now.getSeconds());
-    
+    emitter.emit("calculator timer", "start");
   }else{
     emitter.emit("close_calculate_box", "Calculator")
     guiSettings.value.guiState["calculator"] = false;
