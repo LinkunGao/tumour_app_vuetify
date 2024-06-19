@@ -9,6 +9,7 @@
       ></v-list-item>
     </template>
     <!-- Functional Control -->
+    <Calculator />
     <v-container fluid>
       <v-progress-linear
         color="nav-success-2"
@@ -106,15 +107,26 @@
         stream
       ></v-progress-linear>
     </v-container>
-
     <OperationAdvance />
+    
   </v-list-group>
 </template>
 
 <script setup lang="ts">
 import OperationAdvance from "./advance/OperationAdvance.vue";
+import Calculator from "./advance/Calculator.vue";
 import { ref, onMounted } from "vue";
+import { storeToRefs } from "pinia";
 import emitter from "@/plugins/bus";
+import * as Copper from "@/ts/index";
+import {
+  useTumourWindowStore
+} from "@/store/app";
+// import * as Copper from "copper3d";
+
+// load tumour window
+const { tumourWindow } = storeToRefs(useTumourWindowStore());
+const { getTumourWindowChrunk } = useTumourWindowStore();
 
 // Functional Controls
 const commFuncRadios = ref("segmentation");
@@ -140,12 +152,16 @@ const btnClearAllDisabled = ref(true);
 const contrastDragSensitivity = ref(25);
 
 const guiSettings = ref<any>();
+let nrrdTools:Copper.NrrdTools;
+
+type TTumourCenter = { center: { x: number; y: number; z: number; }};
 
 const commFuncRadioValues = ref([
   { label: "Pencil", value: "segmentation", color: "success" },
   { label: "Sphere", value: "sphere", color: "warning" },
   { label: "Eraser", value: "Eraser", color: "error" },
   { label: "Brush", value: "brush", color: "info" },
+  { label: "Calculate Distance", value: "calculator", color: "calculator" },
 ]);
 
 const commSliderRadioValues = ref([
@@ -188,6 +204,26 @@ onMounted(() => {
 });
 
 function manageEmitters() {
+
+  emitter.on("caseswitched", async (casename)=>{
+    try{
+      setTimeout(()=>{
+        commFuncRadios.value = "segmentation"
+      },500)
+    }catch(e){
+      console.log("first time load images -- ignore");
+    }
+    commFuncRadiosDisabled.value = true;
+    commSliderRadiosDisabled.value = true;
+    sliderDisabled.value = true;
+
+    btnUndoDisabled.value = true;
+    btnResetZoomDisabled.value = true;
+    btnClearDisabled.value = true;
+    btnClearAllDisabled.value = true;
+    await getTumourWindowChrunk(casename as string);
+  });
+
   emitter.on("finishloadcases", (val) => {
     guiSettings.value = val;
     commSliderRadios.value = "globalAlpha";
@@ -208,6 +244,10 @@ function manageEmitters() {
   emitter.on("dragImageWindowHigh", (step)=>{
     dragToChangeImageWindow("windowHigh", step as number);
   })
+  // xyz: 84 179 74
+  emitter.on("loadcalculatortumour", (tool)=>{
+    nrrdTools = tool as Copper.NrrdTools
+  });
 }
 
 function dragToChangeImageWindow(type:"windowHigh"|"windowLow", step:number){
@@ -226,30 +266,52 @@ function dragToChangeImageWindow(type:"windowHigh"|"windowLow", step:number){
  
 }
 
+function setupTumourSpherePosition(){
+
+  if (!!tumourWindow.value){
+    nrrdTools.setCalculateDistanceSphere((tumourWindow.value as TTumourCenter).center.x, (tumourWindow.value as TTumourCenter).center.y, (tumourWindow.value as TTumourCenter).center.z, "tumour");
+  }
+}
+
 function toggleFuncRadios(val: any) {
-  if (val === "sphere") {
-    guiSettings.value.guiState["sphere"] = true;
-  } else {
+
+  if(val === "calculator"){
+    emitter.emit("open_calculate_box", "Calculator")
+    guiSettings.value.guiState["calculator"] = true;
     guiSettings.value.guiState["sphere"] = false;
-    if (val === "Eraser") {
-      guiSettings.value.guiState["Eraser"] = true;
+    setupTumourSpherePosition()
+    emitter.emit("calculator timer", "start");
+  }else{
+    emitter.emit("close_calculate_box", "Calculator")
+    guiSettings.value.guiState["calculator"] = false;
+    if (val === "sphere") {
+      guiSettings.value.guiState["sphere"] = true;
     } else {
-      guiSettings.value.guiState["Eraser"] = false;
-      if (val === "segmentation") {
-        guiSettings.value.guiState["segmentation"] = true;
+      guiSettings.value.guiState["sphere"] = false;
+      if (val === "Eraser") {
+        guiSettings.value.guiState["Eraser"] = true;
       } else {
-        guiSettings.value.guiState["segmentation"] = false;
-        guiSettings.value.guiSetting["segmentation"].onChange();
-        return;
+        guiSettings.value.guiState["Eraser"] = false;
+        if (val === "segmentation") {
+          guiSettings.value.guiState["segmentation"] = true;
+        } else {
+          guiSettings.value.guiState["segmentation"] = false;
+          guiSettings.value.guiSetting["segmentation"].onChange();
+          return;
+        }
       }
     }
   }
+  
 
   if(prebtn.value==="sphere" && prebtn!==val){
     guiSettings.value.guiSetting["sphere"].onChange();
   }
+  if(prebtn.value==="calculator" && prebtn!==val){
+    guiSettings.value.guiSetting["calculator"].onChange();
+  }
 
-  prebtn.value=val;
+  prebtn.value=val;  
   guiSettings.value.guiSetting[commFuncRadios.value].onChange();
 }
 

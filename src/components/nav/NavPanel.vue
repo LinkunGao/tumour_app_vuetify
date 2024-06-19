@@ -33,6 +33,12 @@ function manageEmitters() {
       open.value.push("Operation")
     }
   });
+  emitter.on("open_calculate_box", (val)=>{
+    open.value.push(val as string)
+  })
+  emitter.on("close_calculate_box", (val)=>{
+    open.value = open.value.filter(item => item !== val)
+  })
 }
 
 </script>

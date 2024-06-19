@@ -29,6 +29,7 @@ import {
   IRegRquest,
   INipplePoints,
   IRibSkinPoints,
+  ITumourWindow,
   IRequests,
 } from "@/models/apiTypes";
 export const useFileCountStore = defineStore("filesCount", () => {
@@ -171,6 +172,19 @@ export const useRibPointsStore = defineStore("getRibPoints", () => {
   return {
     ribPoints,
     getRibPoints,
+  };
+});
+
+export const useTumourWindowStore = defineStore("getTumourWindow", () => {
+  const tumourWindow = ref<ITumourWindow | Boolean>();
+  const getTumourWindowChrunk = async (name: string) => {
+    tumourWindow.value = (await useBreastPointsJson(name, "tumour_window")) as
+      | ITumourWindow
+      | boolean;
+  };
+  return {
+    tumourWindow,
+    getTumourWindowChrunk,
   };
 });
 

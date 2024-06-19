@@ -90,7 +90,8 @@ function manageEmitters() {
   });
 }
 
-function toggleColorPickerRadios(val: string) {
+function toggleColorPickerRadios(val: string | null) {
+  if (val === null) return;
   commColorPicker.value = guiSettings.value.guiState[val];
 }
 

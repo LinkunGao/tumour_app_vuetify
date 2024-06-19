@@ -54,6 +54,7 @@ const darkTheme: ThemeDefinition = {
     info: "#2196F3",
     success: "#4caf50",
     warning: "#fb8c00",
+    calculator: "#1DE9B6",
     "nav-success": "#009688",
     "nav-success-2": "#26C6DA",
     "segement-panel": "#F4511E",

@@ -11,6 +11,19 @@
       @on-close-dialog="onCloseDialog"
       @get-load-files-urls="readyToLoad"
     ></Upload>
+
+    <!-- <div v-show="showCalculatorValue" class="left-value-panel mt-2">
+      <div class="dts"><span>DTS:</span> <span>{{ 0 }} mm</span></div>
+      <div class="dtr"><span>DTR:</span> <span>{{ 0 }} mm</span></div>
+      <div class="dtn">
+        <span>DTN:</span> <span>{{ 0 }} mm</span>
+      </div>
+    </div> -->
+    <v-card v-show="showCalculatorValue" class="left-value-panel mt-2">
+      <div class="dts"><span>DTS:</span> <span>{{ dts }} mm</span></div>
+      <div class="dtn"><span>DTN:</span> <span>{{ dtn }} mm</span></div>
+      <div class="dtr"><span>DTR:</span> <span>{{ dtr }} mm</span></div>
+    </v-card>
   </div>
   <div
     v-show="panelWidth >= 600 ? true : false"
@@ -33,9 +46,9 @@
 </template>
 <script setup lang="ts">
 import { GUI, GUIController } from "dat.gui";
-import * as Copper from "copper3d";
+// import * as Copper from "copper3d";
 import "copper3d/dist/css/style.css";
-// import * as Copper from "@/ts/index";
+import * as Copper from "@/ts/index";
 import loadingGif from "@/assets/loading.svg";
 
 import NavBar from "@/components/commonBar/NavBar.vue";
@@ -122,6 +135,11 @@ let regCheckboxElement: HTMLInputElement;
 
 let showNavToolsBar = ref(true);
 
+let dts = ref(0);
+let dtn = ref(0);
+let dtr = ref(0);
+
+
 let state = {
   showContrast: false,
   switchCase: "",
@@ -155,11 +173,20 @@ let regUrls = ref<ICaseUrls>({ nrrdUrls: [], jsonUrl: "" });
 const eraserUrls = getEraserUrlsForOffLine();
 const cursorUrls = getCursorUrlsForOffLine();
 
+const showCalculatorValue = ref(false);
+
 withDefaults(defineProps<Props>(), {
   panelWidth: 1000,
 });
 
 function onEmitter() {
+  emitter.on("open_calculate_box", (val)=>{
+    showCalculatorValue.value = true
+  })
+  emitter.on("close_calculate_box", (val)=>{
+    showCalculatorValue.value = false
+  })
+
   emitter.on("show_debug_mode", (flag) => {
     debug_mode.value = flag as boolean;
   });
@@ -398,6 +425,33 @@ const getSphereData = async (sphereOrigin: number[], sphereRadius: number) => {
   await sendSaveSphere(sphereData);
 };
 
+function distance3D(x1:number, y1:number, z1:number, x2:number, y2:number, z2:number) {
+    let dx = x2 - x1;
+    let dy = y2 - y1;
+    let dz = z2 - z1;
+    return Math.sqrt(dx * dx + dy * dy + dz * dz);
+}
+
+const getCalculateSpherePositionsData = (tumourSphereOrigin:Copper.ICommXYZ, skinSphereOrigin:Copper.ICommXYZ, ribSphereOrigin:Copper.ICommXYZ, nippleSphereOrigin:Copper.ICommXYZ, aix:"x"|"y"|"z")=>{
+   if(tumourSphereOrigin === null) return;
+
+   if (skinSphereOrigin !== null){
+     dts.value = Number(distance3D(tumourSphereOrigin[aix][0], tumourSphereOrigin[aix][1], tumourSphereOrigin[aix][2], skinSphereOrigin[aix][0], skinSphereOrigin[aix][1], skinSphereOrigin[aix][2]).toFixed(2));
+   }
+   if (ribSphereOrigin !== null){
+     dtr.value = Number(distance3D(tumourSphereOrigin[aix][0], tumourSphereOrigin[aix][1], tumourSphereOrigin[aix][2], ribSphereOrigin[aix][0], ribSphereOrigin[aix][1], ribSphereOrigin[aix][2]).toFixed(2));
+   }
+   if (nippleSphereOrigin !== null){
+     dtn.value = Number(distance3D(tumourSphereOrigin[aix][0], tumourSphereOrigin[aix][1], tumourSphereOrigin[aix][2], nippleSphereOrigin[aix][0], nippleSphereOrigin[aix][1], nippleSphereOrigin[aix][2]).toFixed(2));
+   }
+   
+   // send status to calculator component
+   if (nrrdTools.gui_states.cal_distance !== "tumour"){
+    emitter.emit("calculator timer", nrrdTools.gui_states.cal_distance);
+   }
+   
+}
+
 const getMaskData = async (
   image: ImageData,
   sliceId: number,
@@ -479,11 +533,13 @@ watchEffect(() => {
         nrrdTools.drag({
           getSliceNum,
         });
-        nrrdTools.draw({ getMaskData, getSphereData });
+        nrrdTools.draw({ getMaskData, getSphereData, getCalculateSpherePositionsData});
         nrrdTools.setupGUI(gui);
         nrrdTools.enableContrastDragEvents(getContrastMove)
         scene?.addPreRenderCallbackFunction(nrrdTools.start);
         setUpGuiAfterLoading();
+        // xyz: 84 179 74
+        emitter.emit("loadcalculatortumour", nrrdTools);
       } else {
         nrrdTools.redrawMianPreOnDisplayCanvas();
       }
@@ -882,5 +938,40 @@ function switchRegCheckBoxStatus(
 .copper3D_drawingCanvasContainer {
   max-width: 80%;
   max-height: 80%;
+}
+
+.left-value-panel {
+  position: absolute !important;
+  z-index: 10000;
+  left: 15px;
+  top: 0px;
+  width: 200px;
+  height: 80px;
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  border: 2px solid rgba(255, 255, 255, 0.3) !important;
+  border-radius: 10px !important;
+  padding: 10px 15px !important;
+  font-size: smaller !important;
+  user-select: text !important;
+  -webkit-user-select: text !important;
+  /* display: flex; */
+  /* align-items: center; */
+  /* justify-content: center; */
+}
+
+.left-value-panel > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.left-value-panel .dts {
+  color: #FFEB3B;
+}
+.left-value-panel .dtr {
+  color: darkcyan;
+}
+.left-value-panel .dtn {
+  color: hotpink;
 }
 </style>
