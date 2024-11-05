@@ -34,10 +34,10 @@
 <script setup lang="ts">
 import { GUI } from "dat.gui";
 import * as THREE from "three";
-// import * as Copper from "copper3d";
+import * as Copper from "copper3d";
 import "copper3d/dist/css/style.css";
 import createKDTree from "copper3d-tree";
-import * as Copper from "@/ts/index";
+// import * as Copper from "@/ts/index";
 import {
   onMounted,
   ref,
