@@ -1,6 +1,6 @@
 <template>
-  <div class="nav dark guide-left-nav-tool" ref="nav_container">
-    <div class="content" id="left_nav_bar">
+  <div class="nav dark guide-left-nav-tool" ref="nav_container" >
+    <div class="content" id="left_nav_bar" @dblclick.stop>
       <el-slider
         v-model="sliceNum"
         :max="p.max"

@@ -1,6 +1,6 @@
 <template>
   <div class="nav dark guide-right-nav-tool" ref="nav_container">
-    <div class="content" id="right_nav_bar">
+    <div class="content" id="right_nav_bar" @dblclick.stop>
 
       <div v-show="showDragSlider && panelWidth >= 600 ? true : false" :class="panelWidth >1000 ? 'mx-6 px-6 slider-lg':'slider-sm'">
         <v-slider

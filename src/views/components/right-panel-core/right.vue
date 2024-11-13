@@ -34,10 +34,10 @@
 <script setup lang="ts">
 import { GUI } from "dat.gui";
 import * as THREE from "three";
-// import * as Copper from "copper3d";
+import * as Copper from "copper3d";
 import "copper3d/dist/css/style.css";
 import createKDTree from "copper3d-tree";
-import * as Copper from "@/ts/index";
+// import * as Copper from "@/ts/index";
 import {
   onMounted,
   ref,
@@ -501,6 +501,9 @@ function onEmitter() {
     const spherePosition = [correctOrigin[0]+sphereData.sphereOriginMM[0], correctOrigin[1]+sphereData.sphereOriginMM[1], correctOrigin[2]+sphereData.sphereOriginMM[2]]
     
     sphereTumour.position.set(spherePosition[0], spherePosition[1],spherePosition[2])
+    if (!tumourPosition) {
+      tumourPosition = new THREE.Vector3()
+    }
     tumourPosition?.set(spherePosition[0], spherePosition[1],spherePosition[2])
 
     // update tumour size
@@ -755,6 +758,10 @@ function loadSegmentTumour(tomourUrl:string){
 }
 
 function displayAndCalculateNSR(){
+  console.log("displayAndCalculateNSR");
+  console.log(tumourPosition);
+  
+  
   if (!!tumourPosition) {
       // const nippleTree = createKDTree(nipplesPos);
       // const idx = nippleTree.nn([tumourCenter.x,tumourCenter.y,tumourCenter.z])

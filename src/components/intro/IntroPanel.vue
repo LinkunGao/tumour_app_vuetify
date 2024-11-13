@@ -138,9 +138,8 @@ function guideTour() {
           {
             title: "Draw Panel Settings",
             element: document.querySelector('.guide-operation-functional-control'),
-            intro: `Using Pencil, Bursh, and Eraser need to press shift key and don't release it, 
-                    then use mouse left button to draw. Sphere function is allow user to draw a sphere to identify the tumour, don't need to press shift key, 
-                    use mouse left button to choose sphere center and using mouse wheel to control sphere size.`,
+            intro: `To use the Pencil, Brush, or Eraser, press and hold the Shift key, then click and drag with the left mouse button to draw.
+The Sphere tool allows you to mark the tumor without needing to hold the Shift key. Simply click with the left mouse button to select the center of the sphere, and use the mouse wheel to adjust its size when you still hold the left mouse button.`,
             position: 'right',
           },
           {
@@ -211,9 +210,8 @@ function guideTour() {
           {
             title: "3D MRI views",
             element: document.querySelector('.guide-right-twoD-view'),
-            intro: `Sagittal / Axial / Coronal views: After Single-Clicking it, a slider for control slice index will appear at the left, 
-                    or use mouse left click to drag to Switch slices, click mouse middel wheel for Rotate, scroll middle 
-                    wheel for Zoom, right click for Pan. Double-Click for changing image position to front view`,
+            intro: `Sagittal / Axial / Coronal Views:
+After clicking once, a slider will appear on the left to control the slice index. You can also drag the mouse left-click to switch slices. Use the middle mouse button to rotate, scroll the middle wheel to zoom, and right-click to pan. Double-click to switch the image to a front view.`,
           },
           {
             title: "Back to 3D view",
